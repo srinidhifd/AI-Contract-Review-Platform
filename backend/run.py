@@ -11,10 +11,24 @@ def install_uvicorn():
     """Install uvicorn if it's not available."""
     try:
         print("Installing uvicorn...")
-        subprocess.check_call([sys.executable, "-m", "pip", "install", "uvicorn[standard]==0.24.0"])
-        print("✅ uvicorn installed successfully")
-        return True
-    except subprocess.CalledProcessError as e:
+        # Try different pip methods
+        methods = [
+            [sys.executable, "-m", "pip", "install", "uvicorn[standard]==0.24.0"],
+            ["pip", "install", "uvicorn[standard]==0.24.0"],
+            ["python3", "-m", "pip", "install", "uvicorn[standard]==0.24.0"]
+        ]
+        
+        for method in methods:
+            try:
+                subprocess.check_call(method)
+                print("✅ uvicorn installed successfully")
+                return True
+            except (subprocess.CalledProcessError, FileNotFoundError):
+                continue
+        
+        print("❌ All pip installation methods failed")
+        return False
+    except Exception as e:
         print(f"❌ Failed to install uvicorn: {e}")
         return False
 
@@ -24,8 +38,9 @@ def check_uvicorn():
         import uvicorn
         print("✅ uvicorn is available")
         return True
-    except ImportError:
-        print("⚠️ uvicorn not found, installing...")
+    except ImportError as e:
+        print(f"⚠️ uvicorn not found: {e}")
+        print("⚠️ Attempting to install uvicorn...")
         return install_uvicorn()
 
 def main():

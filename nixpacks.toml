@@ -3,13 +3,17 @@ nixPkgs = ["python39", "pip"]
 
 [phases.install]
 cmds = [
-  "pip install --upgrade pip",
-  "pip install -r requirements.txt",
-  "pip install uvicorn[standard]==0.24.0"
+  "python -m ensurepip --upgrade",
+  "python -m pip install --upgrade pip",
+  "python -m pip install -r requirements.txt",
+  "python -m pip install uvicorn[standard]==0.24.0"
 ]
 
 [phases.build]
-cmds = ["python -c 'import uvicorn; print(\"uvicorn installed successfully\")'"]
+cmds = [
+  "python -c 'import uvicorn; print(\"uvicorn installed successfully\")'",
+  "python -c 'import sys; print(f\"Python path: {sys.path}\")'"
+]
 
 [start]
-cmd = "cd /app && python run.py"
+cmd = "python start.py"
