@@ -296,7 +296,7 @@ def validate_config() -> bool:
             return False
         
         logging.info("Configuration validation successful")
-        return True 
+    return True 
         
     except Exception as e:
         logging.error(f"Configuration validation failed: {e}")

@@ -91,18 +91,18 @@ class OpenAIService:
                             recommendation=risk.get("recommendation", "Please review manually")
                         ))
                 
-                summary = ContractSummary(
-                    document_id=document_id,
+            summary = ContractSummary(
+                document_id=document_id,
                     summary=analysis_data.get("summary", "Analysis completed"),
                     risk_score=float(analysis_data.get("risk_score", 0.0)),
                     total_clauses=int(analysis_data.get("total_clauses", len(risk_assessments))),
                     key_points=analysis_data.get("key_points", ["Analysis completed"]),
                     risk_assessments=risk_assessments,
                     suggested_revisions=analysis_data.get("suggested_revisions", ["Review contract terms"]),
-                    processing_time=processing_time,
-                    model_used=self.config["model"],
-                    confidence_score=0.85  # Default confidence score
-                )
+                processing_time=processing_time,
+                model_used=self.config["model"],
+                confidence_score=0.85  # Default confidence score
+            )
                 logger.info("ContractSummary object created successfully")
             except Exception as e:
                 logger.error(f"Failed to create ContractSummary: {e}")
