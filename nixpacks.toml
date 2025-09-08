@@ -12,4 +12,4 @@ cmds = [
 cmds = ["python -c 'import uvicorn; print(\"uvicorn installed successfully\")'"]
 
 [start]
-cmd = "python run.py"
+cmd = "cd /app && python run.py"
