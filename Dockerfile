@@ -15,6 +15,9 @@ COPY requirements.txt .
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Verify uvicorn installation
+RUN python -c "import uvicorn; print('uvicorn installed successfully')"
+
 # Copy the application code
 COPY . .
 
