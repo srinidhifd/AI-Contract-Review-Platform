@@ -9,6 +9,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.config import settings, validate_config, get_logging_config
 from app.services.mongodb_service import mongodb_service
@@ -84,6 +85,9 @@ app.add_middleware(
 # Include API routes
 app.include_router(api_router, prefix=settings.API_V1_STR)
 
+# Mount static files for logo
+app.mount("/images", StaticFiles(directory="frontend/public/images"), name="images")
+
 # Add compatibility endpoints for frontend
 from fastapi import Request
 from fastapi.responses import RedirectResponse
@@ -103,6 +107,21 @@ async def logout_compatibility(request: Request):
     """Compatibility endpoint for frontend logout calls."""
     return {"message": "Logged out successfully"}
 
+# Add explicit OPTIONS handlers for CORS preflight
+@app.options("/api/v1/auth/login")
+async def login_options():
+    """Handle CORS preflight for login."""
+    return JSONResponse(content={}, status_code=200)
+
+@app.options("/api/v1/auth/register")
+async def register_options():
+    """Handle CORS preflight for register."""
+    return JSONResponse(content={}, status_code=200)
+
+@app.options("/api/v1/auth/logout")
+async def logout_options():
+    """Handle CORS preflight for logout."""
+    return JSONResponse(content={}, status_code=200)
 
 @app.get("/")
 async def root():
