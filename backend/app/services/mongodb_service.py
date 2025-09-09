@@ -35,18 +35,32 @@ class MongoDBService:
                 
                 # Extract and encode username/password from URL
                 # Handle both mongodb:// and mongodb+srv:// URLs
-                url_pattern = r'mongodb(\+srv)?://([^:]+):([^@]+)@(.+)'
-                match = re.match(url_pattern, settings.MONGODB_URL)
-                if match:
-                    protocol, username, password, rest = match.groups()
-                    encoded_username = quote_plus(username)
-                    encoded_password = quote_plus(password)
-                    protocol = protocol or ""  # Handle None case
-                    encoded_url = f"mongodb{protocol}://{encoded_username}:{encoded_password}@{rest}"
-                    logger.info(f"URL encoding applied: {protocol}, {username[:3]}***, {password[:3]}***")
+                if 'mongodb+srv://' in settings.MONGODB_URL:
+                    # Handle mongodb+srv:// URLs
+                    url_pattern = r'mongodb\+srv://([^:]+):([^@]+)@(.+)'
+                    match = re.match(url_pattern, settings.MONGODB_URL)
+                    if match:
+                        username, password, rest = match.groups()
+                        encoded_username = quote_plus(username)
+                        encoded_password = quote_plus(password)
+                        encoded_url = f"mongodb+srv://{encoded_username}:{encoded_password}@{rest}"
+                        logger.info(f"URL encoding applied for +srv: {username[:3]}***, {password[:3]}***")
+                    else:
+                        encoded_url = settings.MONGODB_URL
+                        logger.warning(f"+srv URL pattern did not match, using original URL")
                 else:
-                    encoded_url = settings.MONGODB_URL
-                    logger.warning(f"URL pattern did not match, using original URL")
+                    # Handle regular mongodb:// URLs
+                    url_pattern = r'mongodb://([^:]+):([^@]+)@(.+)'
+                    match = re.match(url_pattern, settings.MONGODB_URL)
+                    if match:
+                        username, password, rest = match.groups()
+                        encoded_username = quote_plus(username)
+                        encoded_password = quote_plus(password)
+                        encoded_url = f"mongodb://{encoded_username}:{encoded_password}@{rest}"
+                        logger.info(f"URL encoding applied for regular: {username[:3]}***, {password[:3]}***")
+                    else:
+                        encoded_url = settings.MONGODB_URL
+                        logger.warning(f"Regular URL pattern did not match, using original URL")
                 
                 logger.info(f"Attempting MongoDB connection with encoded URL")
                 
