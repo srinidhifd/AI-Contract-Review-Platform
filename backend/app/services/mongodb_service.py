@@ -34,13 +34,15 @@ class MongoDBService:
                 import re
                 
                 # Extract and encode username/password from URL
-                url_pattern = r'mongodb://([^:]+):([^@]+)@(.+)'
+                # Handle both mongodb:// and mongodb+srv:// URLs
+                url_pattern = r'mongodb(\+srv)?://([^:]+):([^@]+)@(.+)'
                 match = re.match(url_pattern, settings.MONGODB_URL)
                 if match:
-                    username, password, rest = match.groups()
+                    protocol, username, password, rest = match.groups()
                     encoded_username = quote_plus(username)
                     encoded_password = quote_plus(password)
-                    encoded_url = f"mongodb://{encoded_username}:{encoded_password}@{rest}"
+                    protocol = protocol or ""  # Handle None case
+                    encoded_url = f"mongodb{protocol}://{encoded_username}:{encoded_password}@{rest}"
                 else:
                     encoded_url = settings.MONGODB_URL
                 

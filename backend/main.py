@@ -9,7 +9,6 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from fastapi.staticfiles import StaticFiles
 
 from app.config import settings, validate_config, get_logging_config
 from app.services.mongodb_service import mongodb_service
@@ -84,9 +83,6 @@ app.add_middleware(
 
 # Include API routes
 app.include_router(api_router, prefix=settings.API_V1_STR)
-
-# Note: Logo is now handled by frontend as text-based design
-# No need for static file mounting
 
 # Add compatibility endpoints for frontend
 from fastapi import Request
