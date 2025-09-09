@@ -29,10 +29,25 @@ class MongoDBService:
                 # Create MongoDB client - try different connection approaches
                 connection_successful = False
                 
+                # URL encode the MongoDB URL to handle special characters
+                from urllib.parse import quote_plus
+                import re
+                
+                # Extract and encode username/password from URL
+                url_pattern = r'mongodb://([^:]+):([^@]+)@(.+)'
+                match = re.match(url_pattern, settings.MONGODB_URL)
+                if match:
+                    username, password, rest = match.groups()
+                    encoded_username = quote_plus(username)
+                    encoded_password = quote_plus(password)
+                    encoded_url = f"mongodb://{encoded_username}:{encoded_password}@{rest}"
+                else:
+                    encoded_url = settings.MONGODB_URL
+                
                 # Approach 1: Try with SSL and certifi
                 try:
                     self.client = AsyncIOMotorClient(
-                        settings.MONGODB_URL,
+                        encoded_url,
                         tls=True,
                         tlsCAFile=certifi.where(),
                         serverSelectionTimeoutMS=5000,
@@ -49,7 +64,7 @@ class MongoDBService:
                 if not connection_successful:
                     try:
                         self.client = AsyncIOMotorClient(
-                            settings.MONGODB_URL,
+                            encoded_url,
                             tls=True,
                             serverSelectionTimeoutMS=5000,
                             connectTimeoutMS=5000,
@@ -64,7 +79,7 @@ class MongoDBService:
                 # Approach 3: Try without SSL (convert srv to regular)
                 if not connection_successful:
                     try:
-                        url_without_ssl = settings.MONGODB_URL.replace('mongodb+srv://', 'mongodb://')
+                        url_without_ssl = encoded_url.replace('mongodb+srv://', 'mongodb://')
                         self.client = AsyncIOMotorClient(
                             url_without_ssl,
                             serverSelectionTimeoutMS=5000,
@@ -236,7 +251,7 @@ class MongoDBService:
                 user_object_id = ObjectId(user_id)
                 documents = await Document.find(
                     {"user_id": user_object_id}
-                ).sort(-Document.upload_date).skip(skip).limit(limit).to_list()
+            ).sort(-Document.upload_date).skip(skip).limit(limit).to_list()
                 
                 if documents:
                     logger.info(f"Found {len(documents)} documents for user {user_id} using raw query")
