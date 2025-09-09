@@ -43,8 +43,12 @@ class MongoDBService:
                     encoded_password = quote_plus(password)
                     protocol = protocol or ""  # Handle None case
                     encoded_url = f"mongodb{protocol}://{encoded_username}:{encoded_password}@{rest}"
+                    logger.info(f"URL encoding applied: {protocol}, {username[:3]}***, {password[:3]}***")
                 else:
                     encoded_url = settings.MONGODB_URL
+                    logger.warning(f"URL pattern did not match, using original URL")
+                
+                logger.info(f"Attempting MongoDB connection with encoded URL")
                 
                 # Approach 1: Try with SSL and certifi
                 try:
@@ -93,6 +97,22 @@ class MongoDBService:
                         connection_successful = True
                     except Exception as e3:
                         logger.warning(f"No SSL failed: {e3}")
+                
+                # Approach 4: Try original URL without encoding
+                if not connection_successful:
+                    try:
+                        logger.info("Trying original URL without encoding")
+                        self.client = AsyncIOMotorClient(
+                            settings.MONGODB_URL,
+                            serverSelectionTimeoutMS=5000,
+                            connectTimeoutMS=5000,
+                            socketTimeoutMS=5000
+                        )
+                        await self.client.admin.command('ping')
+                        logger.info("MongoDB connected successfully with original URL")
+                        connection_successful = True
+                    except Exception as e4:
+                        logger.warning(f"Original URL failed: {e4}")
                 
                 if not connection_successful:
                     raise Exception("All MongoDB connection approaches failed")
