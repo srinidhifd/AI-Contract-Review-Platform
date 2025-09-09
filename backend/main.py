@@ -85,8 +85,8 @@ app.add_middleware(
 # Include API routes
 app.include_router(api_router, prefix=settings.API_V1_STR)
 
-# Mount static files for logo
-app.mount("/images", StaticFiles(directory="frontend/public/images"), name="images")
+# Note: Logo is now handled by frontend as text-based design
+# No need for static file mounting
 
 # Add compatibility endpoints for frontend
 from fastapi import Request
