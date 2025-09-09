@@ -111,9 +111,9 @@ class MongoDBService:
                         encoded_url,
                         tls=True,
                         tlsCAFile=certifi.where(),
-                        serverSelectionTimeoutMS=5000,
-                        connectTimeoutMS=5000,
-                        socketTimeoutMS=5000
+                        serverSelectionTimeoutMS=10000,
+                        connectTimeoutMS=10000,
+                        socketTimeoutMS=10000
                     )
                     await self.client.admin.command('ping')
                     logger.info("MongoDB connected successfully with TLS + certifi")
@@ -127,9 +127,9 @@ class MongoDBService:
                         self.client = AsyncIOMotorClient(
                             encoded_url,
                             tls=True,
-                            serverSelectionTimeoutMS=5000,
-                            connectTimeoutMS=5000,
-                            socketTimeoutMS=5000
+                            serverSelectionTimeoutMS=10000,
+                            connectTimeoutMS=10000,
+                            socketTimeoutMS=10000
                         )
                         await self.client.admin.command('ping')
                         logger.info("MongoDB connected successfully with TLS only")
@@ -137,37 +137,59 @@ class MongoDBService:
                     except Exception as e2:
                         logger.warning(f"TLS only failed: {e2}")
                 
-                # Approach 3: Try without SSL (convert srv to regular)
+                # Approach 3: Try with SSL but allow invalid certificates (for Railway)
+                if not connection_successful:
+                    try:
+                        import ssl
+                        ssl_context = ssl.create_default_context()
+                        ssl_context.check_hostname = False
+                        ssl_context.verify_mode = ssl.CERT_NONE
+                        
+                        self.client = AsyncIOMotorClient(
+                            encoded_url,
+                            tls=True,
+                            tlsContext=ssl_context,
+                            serverSelectionTimeoutMS=10000,
+                            connectTimeoutMS=10000,
+                            socketTimeoutMS=10000
+                        )
+                        await self.client.admin.command('ping')
+                        logger.info("MongoDB connected successfully with SSL (no cert verification)")
+                        connection_successful = True
+                    except Exception as e3:
+                        logger.warning(f"SSL no cert verification failed: {e3}")
+                
+                # Approach 4: Try without SSL (convert srv to regular)
                 if not connection_successful:
                     try:
                         url_without_ssl = encoded_url.replace('mongodb+srv://', 'mongodb://')
                         self.client = AsyncIOMotorClient(
                             url_without_ssl,
-                            serverSelectionTimeoutMS=5000,
-                            connectTimeoutMS=5000,
-                            socketTimeoutMS=5000
+                            serverSelectionTimeoutMS=10000,
+                            connectTimeoutMS=10000,
+                            socketTimeoutMS=10000
                         )
                         await self.client.admin.command('ping')
                         logger.info("MongoDB connected successfully without SSL")
                         connection_successful = True
-                    except Exception as e3:
-                        logger.warning(f"No SSL failed: {e3}")
+                    except Exception as e4:
+                        logger.warning(f"No SSL failed: {e4}")
                 
-                # Approach 4: Try original URL without encoding
+                # Approach 5: Try original URL without encoding
                 if not connection_successful:
                     try:
                         logger.info("Trying original URL without encoding")
                         self.client = AsyncIOMotorClient(
                             settings.MONGODB_URL,
-                            serverSelectionTimeoutMS=5000,
-                            connectTimeoutMS=5000,
-                            socketTimeoutMS=5000
+                            serverSelectionTimeoutMS=10000,
+                            connectTimeoutMS=10000,
+                            socketTimeoutMS=10000
                         )
                         await self.client.admin.command('ping')
                         logger.info("MongoDB connected successfully with original URL")
                         connection_successful = True
-                    except Exception as e4:
-                        logger.warning(f"Original URL failed: {e4}")
+                    except Exception as e5:
+                        logger.warning(f"Original URL failed: {e5}")
                 
                 if not connection_successful:
                     raise Exception("All MongoDB connection approaches failed")
