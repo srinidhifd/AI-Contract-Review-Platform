@@ -2,9 +2,9 @@
 nixPkgs = ["python311", "gcc"]
 
 [phases.install]
-cmds = ["python -m venv --copies /opt/venv && . /opt/venv/bin/activate && pip install -r requirements.txt"]
+cmds = ["python3.11 -m venv --copies /opt/venv && . /opt/venv/bin/activate && pip install -r requirements.txt"]
 
 [start]
-cmd = "hypercorn backend.main:app --bind '[::]:$PORT'"
+cmd = "python3.11 start.py"
 
 

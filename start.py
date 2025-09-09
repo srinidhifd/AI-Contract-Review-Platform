@@ -9,7 +9,7 @@ import sys
 import subprocess
 
 def main():
-    """Start the FastAPI application using hypercorn."""
+    """Start the FastAPI application using uvicorn."""
     print("🚀 Starting AI Contract Review Platform...")
     
     # Set the correct working directory
@@ -18,11 +18,12 @@ def main():
     # Get port from environment
     port = os.environ.get('PORT', '8000')
     
-    # Start hypercorn with the correct module path
+    # Start uvicorn with the correct module path
     cmd = [
-        'hypercorn',
+        'uvicorn',
         'backend.main:app',
-        '--bind', f'[::]:{port}',
+        '--host', '0.0.0.0',
+        '--port', port,
         '--workers', '1',
         '--log-level', 'info'
     ]
@@ -31,7 +32,7 @@ def main():
     print(f"🚀 Command: {' '.join(cmd)}")
     
     try:
-        # Run hypercorn
+        # Run uvicorn
         subprocess.run(cmd, check=True)
     except subprocess.CalledProcessError as e:
         print(f"❌ Failed to start application: {e}")
