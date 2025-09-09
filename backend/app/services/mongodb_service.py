@@ -140,15 +140,11 @@ class MongoDBService:
                 # Approach 3: Try with SSL but allow invalid certificates (for Railway)
                 if not connection_successful:
                     try:
-                        import ssl
-                        ssl_context = ssl.create_default_context()
-                        ssl_context.check_hostname = False
-                        ssl_context.verify_mode = ssl.CERT_NONE
-                        
                         self.client = AsyncIOMotorClient(
                             encoded_url,
                             tls=True,
-                            tlsContext=ssl_context,
+                            tlsAllowInvalidCertificates=True,
+                            tlsAllowInvalidHostnames=True,
                             serverSelectionTimeoutMS=10000,
                             connectTimeoutMS=10000,
                             socketTimeoutMS=10000

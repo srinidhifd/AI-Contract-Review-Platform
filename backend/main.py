@@ -77,8 +77,9 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins_list,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
+    expose_headers=["*"]
 )
 
 # Include API routes
@@ -103,46 +104,16 @@ async def logout_compatibility(request: Request):
     """Compatibility endpoint for frontend logout calls."""
     return {"message": "Logged out successfully"}
 
-# Add explicit OPTIONS handlers for CORS preflight
-@app.options("/api/v1/auth/login")
-async def login_options():
-    """Handle CORS preflight for login."""
+# Global OPTIONS handler for CORS preflight
+@app.options("/{path:path}")
+async def options_handler(path: str):
+    """Handle all OPTIONS requests for CORS preflight."""
     return JSONResponse(
-        content={}, 
+        content={},
         status_code=200,
         headers={
             "Access-Control-Allow-Origin": "https://ai-contract-review-platform.vercel.app",
-            "Access-Control-Allow-Methods": "POST, OPTIONS",
-            "Access-Control-Allow-Headers": "Content-Type, Authorization",
-            "Access-Control-Allow-Credentials": "true",
-            "Access-Control-Max-Age": "600"
-        }
-    )
-
-@app.options("/api/v1/auth/register")
-async def register_options():
-    """Handle CORS preflight for register."""
-    return JSONResponse(
-        content={}, 
-        status_code=200,
-        headers={
-            "Access-Control-Allow-Origin": "https://ai-contract-review-platform.vercel.app",
-            "Access-Control-Allow-Methods": "POST, OPTIONS",
-            "Access-Control-Allow-Headers": "Content-Type, Authorization",
-            "Access-Control-Allow-Credentials": "true",
-            "Access-Control-Max-Age": "600"
-        }
-    )
-
-@app.options("/api/v1/auth/logout")
-async def logout_options():
-    """Handle CORS preflight for logout."""
-    return JSONResponse(
-        content={}, 
-        status_code=200,
-        headers={
-            "Access-Control-Allow-Origin": "https://ai-contract-review-platform.vercel.app",
-            "Access-Control-Allow-Methods": "POST, OPTIONS",
+            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
             "Access-Control-Allow-Headers": "Content-Type, Authorization",
             "Access-Control-Allow-Credentials": "true",
             "Access-Control-Max-Age": "600"
