@@ -1,3 +1,6 @@
+# Production requirements for Railway deployment
+# This file has compatible versions for production deployment
+
 # FastAPI and Web Framework
 fastapi==0.104.1
 uvicorn[standard]==0.24.0
@@ -9,8 +12,8 @@ passlib[bcrypt]==1.7.4
 
 # Configuration and Environment
 python-dotenv==1.0.0
-pydantic==2.5.0
-pydantic-settings==2.1.0
+pydantic==1.10.13
+pydantic-settings==1.10.0
 
 # HTTP Requests
 requests==2.31.0
