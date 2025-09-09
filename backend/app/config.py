@@ -6,8 +6,8 @@ Handles environment variables, settings validation, and AI configuration.
 import os
 import logging
 from typing import Dict, Any, Optional
-from pydantic import Field, field_validator
-from pydantic_settings import BaseSettings
+from pydantic import Field, validator
+from pydantic import BaseSettings
 
 
 class Settings(BaseSettings):
