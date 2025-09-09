@@ -155,10 +155,21 @@ class MongoDBService:
                     except Exception as e3:
                         logger.warning(f"SSL no cert verification failed: {e3}")
                 
-                # Approach 4: Try without SSL (convert srv to regular)
+                # Approach 4: Try without SSL (convert srv to regular with proper hostnames)
                 if not connection_successful:
                     try:
+                        # Convert mongodb+srv:// to mongodb:// with proper hostnames
                         url_without_ssl = encoded_url.replace('mongodb+srv://', 'mongodb://')
+                        # Replace cluster0 with the actual shard hostnames
+                        url_without_ssl = url_without_ssl.replace('cluster0.khva9st.mongodb.net', 'ac-ovsylbv-shard-00-00.khva9st.mongodb.net:27017,ac-ovsylbv-shard-00-01.khva9st.mongodb.net:27017,ac-ovsylbv-shard-00-02.khva9st.mongodb.net:27017')
+                        # Add replica set name
+                        if '?' in url_without_ssl:
+                            url_without_ssl += '&replicaSet=atlas-ovsylbv-shard-0'
+                        else:
+                            url_without_ssl += '?replicaSet=atlas-ovsylbv-shard-0'
+                        
+                        logger.info(f"Trying without SSL: {url_without_ssl[:100]}...")
+                        
                         self.client = AsyncIOMotorClient(
                             url_without_ssl,
                             serverSelectionTimeoutMS=10000,

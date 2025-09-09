@@ -82,6 +82,22 @@ app.add_middleware(
     expose_headers=["*"]
 )
 
+# Global OPTIONS handler for CORS preflight (MUST be before API routes)
+@app.options("/{path:path}")
+async def options_handler(path: str):
+    """Handle all OPTIONS requests for CORS preflight."""
+    return JSONResponse(
+        content={},
+        status_code=200,
+        headers={
+            "Access-Control-Allow-Origin": "https://ai-contract-review-platform.vercel.app",
+            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+            "Access-Control-Allow-Headers": "Content-Type, Authorization",
+            "Access-Control-Allow-Credentials": "true",
+            "Access-Control-Max-Age": "600"
+        }
+    )
+
 # Include API routes
 app.include_router(api_router, prefix=settings.API_V1_STR)
 
@@ -103,22 +119,6 @@ async def register_compatibility(request: Request):
 async def logout_compatibility(request: Request):
     """Compatibility endpoint for frontend logout calls."""
     return {"message": "Logged out successfully"}
-
-# Global OPTIONS handler for CORS preflight
-@app.options("/{path:path}")
-async def options_handler(path: str):
-    """Handle all OPTIONS requests for CORS preflight."""
-    return JSONResponse(
-        content={},
-        status_code=200,
-        headers={
-            "Access-Control-Allow-Origin": "https://ai-contract-review-platform.vercel.app",
-            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-            "Access-Control-Allow-Headers": "Content-Type, Authorization",
-            "Access-Control-Allow-Credentials": "true",
-            "Access-Control-Max-Age": "600"
-        }
-    )
 
 @app.get("/")
 async def root():
