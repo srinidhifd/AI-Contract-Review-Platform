@@ -7,7 +7,7 @@ import os
 import logging
 from typing import Dict, Any, Optional
 from pydantic import Field, validator
-from pydantic_settings import BaseSettings
+from pydantic import BaseSettings
 
 
 class Settings(BaseSettings):
