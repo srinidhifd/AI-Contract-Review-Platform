@@ -82,21 +82,26 @@ app.add_middleware(
     expose_headers=["*"]
 )
 
-# Global OPTIONS handler for CORS preflight (MUST be before API routes)
-@app.options("/{path:path}")
-async def options_handler(path: str):
-    """Handle all OPTIONS requests for CORS preflight."""
-    return JSONResponse(
-        content={},
-        status_code=200,
-        headers={
-            "Access-Control-Allow-Origin": "https://ai-contract-review-platform.vercel.app",
-            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-            "Access-Control-Allow-Headers": "Content-Type, Authorization",
-            "Access-Control-Allow-Credentials": "true",
-            "Access-Control-Max-Age": "600"
-        }
-    )
+# Add custom CORS middleware to handle OPTIONS requests
+from fastapi import Request
+from fastapi.responses import Response
+
+@app.middleware("http")
+async def cors_handler(request: Request, call_next):
+    """Custom CORS handler for OPTIONS requests."""
+    if request.method == "OPTIONS":
+        response = Response()
+        response.headers["Access-Control-Allow-Origin"] = "https://ai-contract-review-platform.vercel.app"
+        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
+        response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+        response.headers["Access-Control-Max-Age"] = "600"
+        return response
+    
+    response = await call_next(request)
+    return response
+
+# CORS preflight requests are handled by CORSMiddleware
 
 # Include API routes
 app.include_router(api_router, prefix=settings.API_V1_STR)
