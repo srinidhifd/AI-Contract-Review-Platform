@@ -420,7 +420,7 @@ Analysis Requirements:
 - Include specific clause analysis for: payment terms, termination, liability, IP, confidentiality, dispute resolution, compliance
 - Score must reflect the SPECIFIC risks found in THIS contract
 
-Return ONLY valid JSON:"""}
+Return ONLY valid JSON:"""
     
     def _make_ai_request(self, prompt: str) -> str:
         """Make request to Mistral AI using direct HTTP API"""
