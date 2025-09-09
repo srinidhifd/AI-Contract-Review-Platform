@@ -1,1 +1,1 @@
-web: python start.py
+web: hypercorn main:app --bind "[::]:$PORT"
