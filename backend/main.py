@@ -103,48 +103,7 @@ async def logout_compatibility(request: Request):
     """Compatibility endpoint for frontend logout calls."""
     return {"message": "Logged out successfully"}
 
-# Add explicit OPTIONS handlers for CORS preflight
-@app.options("/api/v1/auth/login")
-async def login_options():
-    """Handle CORS preflight for login."""
-    return JSONResponse(
-        content={}, 
-        status_code=200,
-        headers={
-            "Access-Control-Allow-Origin": "https://ai-contract-review-platform.vercel.app",
-            "Access-Control-Allow-Methods": "POST, OPTIONS",
-            "Access-Control-Allow-Headers": "Content-Type, Authorization",
-            "Access-Control-Allow-Credentials": "true"
-        }
-    )
-
-@app.options("/api/v1/auth/register")
-async def register_options():
-    """Handle CORS preflight for register."""
-    return JSONResponse(
-        content={}, 
-        status_code=200,
-        headers={
-            "Access-Control-Allow-Origin": "https://ai-contract-review-platform.vercel.app",
-            "Access-Control-Allow-Methods": "POST, OPTIONS",
-            "Access-Control-Allow-Headers": "Content-Type, Authorization",
-            "Access-Control-Allow-Credentials": "true"
-        }
-    )
-
-@app.options("/api/v1/auth/logout")
-async def logout_options():
-    """Handle CORS preflight for logout."""
-    return JSONResponse(
-        content={}, 
-        status_code=200,
-        headers={
-            "Access-Control-Allow-Origin": "https://ai-contract-review-platform.vercel.app",
-            "Access-Control-Allow-Methods": "POST, OPTIONS",
-            "Access-Control-Allow-Headers": "Content-Type, Authorization",
-            "Access-Control-Allow-Credentials": "true"
-        }
-    )
+# CORS preflight requests are handled by CORSMiddleware
 
 @app.get("/")
 async def root():
