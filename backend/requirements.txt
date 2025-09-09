@@ -1,5 +1,6 @@
 # Production requirements for Railway deployment
 # This file has compatible versions for production deployment
+# Updated: Fixed Pydantic v1 compatibility with Python 3.11
 
 # FastAPI and Web Framework
 fastapi==0.104.1
