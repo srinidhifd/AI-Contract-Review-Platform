@@ -250,6 +250,8 @@ uploads/
 *.docx
 *.doc
 *.txt
+!requirements.txt
+!backend/requirements.txt
 
 # Vector store data
 backend/data/
