@@ -2,7 +2,10 @@
 nixPkgs = ["python311", "gcc"]
 
 [phases.install]
-cmds = ["python3.11 -m venv --copies /opt/venv && . /opt/venv/bin/activate && pip install -r requirements.txt"]
+cmds = ["pip install -r requirements.txt"]
+
+[phases.build]
+cmds = ["echo 'Build complete'"]
 
 [start]
-cmd = "python3.11 start.py"
+cmd = "python start.py"
