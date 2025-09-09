@@ -9,7 +9,7 @@ passlib[bcrypt]==1.7.4
 
 # Configuration and Environment
 python-dotenv==1.0.0
-pydantic==1.10.13
+pydantic==2.5.0
 pydantic-settings==2.1.0
 
 # HTTP Requests
@@ -46,4 +46,3 @@ flake8==6.1.0
 
 # Production Deployment
 gunicorn==21.2.0
-hypercorn==0.14.4
