@@ -29,25 +29,65 @@ class MongoDBService:
                 # Create MongoDB client - try different connection approaches
                 connection_successful = False
                 
-                # Use the correct MongoDB URL from Railway with simplified connection
-                encoded_url = "mongodb+srv://srinidhikulkarni25:Srinidhi7@cluster0.khva9st.mongodb.net/contract_review?retryWrites=true&w=majority&appName=Cluster0"
+                # Production-focused MongoDB connection for Railway
+                # Check if we're in production (Railway) and use appropriate connection method
+                import os
+                is_production = os.getenv('RAILWAY_ENVIRONMENT') is not None or os.getenv('ENVIRONMENT') == 'production'
                 
-                logger.info("Using correct MongoDB URL from Railway")
-                
-                # Simplified connection approach - just try the URL directly
-                try:
-                    self.client = AsyncIOMotorClient(
-                        encoded_url,
-                        serverSelectionTimeoutMS=30000,
-                        connectTimeoutMS=30000,
-                        socketTimeoutMS=30000
-                    )
-                    await self.client.admin.command('ping')
-                    logger.info("MongoDB connected successfully!")
-                    connection_successful = True
-                except Exception as e:
-                    logger.error(f"MongoDB connection failed: {e}")
-                    connection_successful = False
+                if is_production:
+                    logger.info("Production environment detected - using Railway-optimized connection")
+                    # Use non-SSL connection for Railway production
+                    non_ssl_url = "mongodb://srinidhikulkarni25:Srinidhi7@ac-ovsylbv-shard-00-00.khva9st.mongodb.net:27017,ac-ovsylbv-shard-00-01.khva9st.mongodb.net:27017,ac-ovsylbv-shard-00-02.khva9st.mongodb.net:27017/contract_review?retryWrites=true&w=majority&replicaSet=atlas-ovsylbv-shard-0"
+                    
+                    try:
+                        self.client = AsyncIOMotorClient(
+                            non_ssl_url,
+                            serverSelectionTimeoutMS=15000,
+                            connectTimeoutMS=15000,
+                            socketTimeoutMS=15000
+                        )
+                        await self.client.admin.command('ping')
+                        logger.info("MongoDB connected successfully with non-SSL (Railway production)!")
+                        connection_successful = True
+                    except Exception as e:
+                        logger.error(f"Railway production connection failed: {e}")
+                        connection_successful = False
+                else:
+                    logger.info("Development environment detected - trying SSL first")
+                    # Try SSL first, then fallback to non-SSL for Railway compatibility
+                    
+                    # Approach 1: Try SSL connection (for local development)
+                    ssl_url = "mongodb+srv://srinidhikulkarni25:Srinidhi7@cluster0.khva9st.mongodb.net/contract_review?retryWrites=true&w=majority&appName=Cluster0"
+                    
+                    try:
+                        self.client = AsyncIOMotorClient(
+                            ssl_url,
+                            serverSelectionTimeoutMS=15000,
+                            connectTimeoutMS=15000,
+                            socketTimeoutMS=15000
+                        )
+                        await self.client.admin.command('ping')
+                        logger.info("MongoDB connected successfully with SSL!")
+                        connection_successful = True
+                    except Exception as e1:
+                        logger.warning(f"SSL connection failed: {e1}")
+                        
+                        # Approach 2: Try non-SSL connection (for Railway production)
+                        non_ssl_url = "mongodb://srinidhikulkarni25:Srinidhi7@ac-ovsylbv-shard-00-00.khva9st.mongodb.net:27017,ac-ovsylbv-shard-00-01.khva9st.mongodb.net:27017,ac-ovsylbv-shard-00-02.khva9st.mongodb.net:27017/contract_review?retryWrites=true&w=majority&replicaSet=atlas-ovsylbv-shard-0"
+                        
+                        try:
+                            self.client = AsyncIOMotorClient(
+                                non_ssl_url,
+                                serverSelectionTimeoutMS=15000,
+                                connectTimeoutMS=15000,
+                                socketTimeoutMS=15000
+                            )
+                            await self.client.admin.command('ping')
+                            logger.info("MongoDB connected successfully with non-SSL (Railway compatible)!")
+                            connection_successful = True
+                        except Exception as e2:
+                            logger.error(f"Both SSL and non-SSL connections failed: {e2}")
+                            connection_successful = False
                 
                 if not connection_successful:
                     # MongoDB connection failed - create a mock connection for testing
