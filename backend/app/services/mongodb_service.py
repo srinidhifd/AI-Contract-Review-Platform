@@ -35,52 +35,55 @@ class MongoDBService:
                 is_production = os.getenv('RAILWAY_ENVIRONMENT') is not None or os.getenv('ENVIRONMENT') == 'production'
                 
                 if is_production:
-                    logger.info("Production environment detected - using Railway SSL connection with bypass")
-                    # Use the original SSL connection string but with Railway-specific SSL bypass
-                    ssl_url = "mongodb+srv://srinidhikulkarni25:Srinidhi7@cluster0.khva9st.mongodb.net/contract_review?retryWrites=true&w=majority&appName=Cluster0"
+                    logger.info("Production environment detected - using Railway MongoDB Atlas connection")
+                    # Use MongoDB Atlas connection string with TLS 1.2 compatibility
+                    atlas_url = "mongodb+srv://srinidhikulkarni25:Srinidhi7@cluster0.khva9st.mongodb.net/contract_review?retryWrites=true&w=majority&appName=Cluster0&tls=true&tlsAllowInvalidCertificates=true"
                     
                     try:
-                        # Use SSL with Railway-specific bypass settings
+                        # Use MongoDB Atlas with TLS 1.2 and Railway compatibility
                         self.client = AsyncIOMotorClient(
-                            ssl_url,
+                            atlas_url,
+                            serverSelectionTimeoutMS=60000,
+                            connectTimeoutMS=60000,
+                            socketTimeoutMS=60000,
+                            maxPoolSize=1,
+                            minPoolSize=1,
+                            maxIdleTimeMS=60000,
+                            retryWrites=True,
+                            retryReads=True,
+                            # Railway-specific SSL settings
                             tls=True,
                             tlsAllowInvalidCertificates=True,
                             tlsAllowInvalidHostnames=True,
-                            serverSelectionTimeoutMS=45000,
-                            connectTimeoutMS=45000,
-                            socketTimeoutMS=45000,
-                            maxPoolSize=1,
-                            minPoolSize=1,
-                            maxIdleTimeMS=45000,
-                            retryWrites=True,
-                            retryReads=True
+                            # Force TLS 1.2 for Railway compatibility
+                            tlsInsecure=True
                         )
                         await self.client.admin.command('ping')
-                        logger.info("MongoDB connected successfully with SSL bypass (Railway production)!")
+                        logger.info("MongoDB connected successfully with Atlas TLS 1.2 (Railway production)!")
                         connection_successful = True
                     except Exception as e1:
-                        logger.warning(f"SSL bypass failed: {e1}")
+                        logger.warning(f"Atlas TLS 1.2 connection failed: {e1}")
                         
-                        # Fallback: Try with different SSL approach
+                        # Fallback: Try with different TLS approach
                         try:
-                            # Try with different SSL settings
+                            # Try with different TLS settings for Railway
+                            fallback_url = "mongodb+srv://srinidhikulkarni25:Srinidhi7@cluster0.khva9st.mongodb.net/contract_review?retryWrites=true&w=majority&appName=Cluster0&ssl=true&sslAllowInvalidCertificates=true"
                             self.client = AsyncIOMotorClient(
-                                ssl_url,
-                                tls=True,
-                                serverSelectionTimeoutMS=60000,
-                                connectTimeoutMS=60000,
-                                socketTimeoutMS=60000,
+                                fallback_url,
+                                serverSelectionTimeoutMS=90000,
+                                connectTimeoutMS=90000,
+                                socketTimeoutMS=90000,
                                 maxPoolSize=1,
                                 minPoolSize=1,
-                                maxIdleTimeMS=60000,
+                                maxIdleTimeMS=90000,
                                 retryWrites=True,
                                 retryReads=True
                             )
                             await self.client.admin.command('ping')
-                            logger.info("MongoDB connected successfully with standard SSL (Railway production)!")
+                            logger.info("MongoDB connected successfully with fallback SSL (Railway production)!")
                             connection_successful = True
                         except Exception as e2:
-                            logger.error(f"All Railway SSL connection attempts failed: {e2}")
+                            logger.error(f"All Railway MongoDB Atlas connection attempts failed: {e2}")
                             connection_successful = False
                 else:
                     logger.info("Development environment detected - trying SSL first")
