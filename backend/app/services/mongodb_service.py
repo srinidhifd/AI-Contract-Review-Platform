@@ -35,62 +35,49 @@ class MongoDBService:
                 is_production = os.getenv('RAILWAY_ENVIRONMENT') is not None or os.getenv('ENVIRONMENT') == 'production'
                 
                 if is_production:
-                    logger.info("Production environment detected - using Railway-optimized SSL connection")
-                    # Use SSL connection with Railway-specific SSL bypass
-                    ssl_url = "mongodb+srv://srinidhikulkarni25:Srinidhi7@cluster0.khva9st.mongodb.net/contract_review?retryWrites=true&w=majority&appName=Cluster0"
+                    logger.info("Production environment detected - using Railway NO-SSL connection")
+                    # Railway has SSL incompatibility with MongoDB Atlas - use NO-SSL connection
+                    # Convert mongodb+srv:// to mongodb:// with explicit hostnames
+                    no_ssl_url = "mongodb://srinidhikulkarni25:Srinidhi7@ac-ovsylbv-shard-00-00.khva9st.mongodb.net:27017,ac-ovsylbv-shard-00-01.khva9st.mongodb.net:27017,ac-ovsylbv-shard-00-02.khva9st.mongodb.net:27017/contract_review?retryWrites=true&w=majority&replicaSet=atlas-ovsylbv-shard-0"
                     
                     try:
-                        # Try with SSL but allow invalid certificates for Railway
+                        # Use NO-SSL connection for Railway (SSL is incompatible)
                         self.client = AsyncIOMotorClient(
-                            ssl_url,
-                            tls=True,
-                            tlsAllowInvalidCertificates=True,
-                            tlsAllowInvalidHostnames=True,
-                            serverSelectionTimeoutMS=20000,
-                            connectTimeoutMS=20000,
-                            socketTimeoutMS=20000
+                            no_ssl_url,
+                            serverSelectionTimeoutMS=30000,
+                            connectTimeoutMS=30000,
+                            socketTimeoutMS=30000,
+                            maxPoolSize=10,
+                            minPoolSize=1,
+                            maxIdleTimeMS=30000,
+                            retryWrites=True
                         )
                         await self.client.admin.command('ping')
-                        logger.info("MongoDB connected successfully with SSL bypass (Railway production)!")
+                        logger.info("MongoDB connected successfully with NO-SSL (Railway production)!")
                         connection_successful = True
                     except Exception as e1:
-                        logger.warning(f"SSL bypass failed: {e1}")
+                        logger.warning(f"Railway NO-SSL connection failed: {e1}")
                         
-                        # Fallback: Try with SSL but no cert verification
+                        # Fallback: Try with different non-SSL approach
                         try:
+                            # Try with different connection parameters
                             self.client = AsyncIOMotorClient(
-                                ssl_url,
-                                tls=True,
-                                serverSelectionTimeoutMS=20000,
-                                connectTimeoutMS=20000,
-                                socketTimeoutMS=20000
+                                no_ssl_url,
+                                serverSelectionTimeoutMS=60000,
+                                connectTimeoutMS=60000,
+                                socketTimeoutMS=60000,
+                                maxPoolSize=1,
+                                minPoolSize=1,
+                                maxIdleTimeMS=60000,
+                                retryWrites=True,
+                                retryReads=True
                             )
                             await self.client.admin.command('ping')
-                            logger.info("MongoDB connected successfully with SSL (Railway production)!")
+                            logger.info("MongoDB connected successfully with extended NO-SSL (Railway production)!")
                             connection_successful = True
                         except Exception as e2:
-                            logger.warning(f"SSL fallback failed: {e2}")
-                            
-                            # Final fallback: Try with different SSL approach
-                            try:
-                                # Try with longer timeouts and different SSL settings
-                                self.client = AsyncIOMotorClient(
-                                    ssl_url,
-                                    tls=True,
-                                    tlsAllowInvalidCertificates=True,
-                                    tlsAllowInvalidHostnames=True,
-                                    serverSelectionTimeoutMS=30000,
-                                    connectTimeoutMS=30000,
-                                    socketTimeoutMS=30000,
-                                    maxPoolSize=1,
-                                    minPoolSize=1
-                                )
-                                await self.client.admin.command('ping')
-                                logger.info("MongoDB connected successfully with extended SSL settings (Railway production)!")
-                                connection_successful = True
-                            except Exception as e3:
-                                logger.error(f"All Railway production connection attempts failed: {e3}")
-                                connection_successful = False
+                            logger.error(f"All Railway NO-SSL connection attempts failed: {e2}")
+                            connection_successful = False
                 else:
                     logger.info("Development environment detected - trying SSL first")
                     # Try SSL first, then fallback to non-SSL for Railway compatibility
