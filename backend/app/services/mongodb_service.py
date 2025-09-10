@@ -42,6 +42,11 @@ class MongoDBService:
                     try:
                         # Use MongoDB Atlas with Railway TLS bypass (definitive solution for TLSV1_ALERT_INTERNAL_ERROR)
                         import ssl
+                        # Create SSL context with Railway TLS bypass
+                        ssl_context = ssl.create_default_context()
+                        ssl_context.check_hostname = False
+                        ssl_context.verify_mode = ssl.CERT_NONE
+                        
                         self.client = AsyncIOMotorClient(
                             atlas_url,
                             tls=True,
@@ -56,9 +61,7 @@ class MongoDBService:
                             retryWrites=True,
                             retryReads=True,
                             # Railway-specific TLS bypass
-                            ssl_context=ssl.create_default_context(),
-                            ssl_context.check_hostname=False,
-                            ssl_context.verify_mode=ssl.CERT_NONE
+                            ssl_context=ssl_context
                         )
                         await self.client.admin.command('ping')
                         logger.info("MongoDB connected successfully with Railway TLS bypass (production)!")
