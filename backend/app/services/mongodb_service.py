@@ -29,79 +29,10 @@ class MongoDBService:
                 # Create MongoDB client - try different connection approaches
                 connection_successful = False
                 
-                # URL encode the MongoDB URL to handle special characters
-                from urllib.parse import quote_plus
-                import re
+                # Use the correct MongoDB URL from Railway
+                encoded_url = "mongodb+srv://srinidhikulkarni25:Srinidhi7@cluster0.khva9st.mongodb.net/contract_review?retryWrites=true&w=majority&appName=Cluster0&tls=true"
                 
-                # Extract and encode username/password from URL
-                # Handle both mongodb:// and mongodb+srv:// URLs
-                if 'mongodb+srv://' in settings.MONGODB_URL:
-                    # Handle mongodb+srv:// URLs
-                    # Parse URL manually to handle passwords with @ symbols
-                    try:
-                        # Remove mongodb+srv:// prefix
-                        url_without_prefix = settings.MONGODB_URL.replace('mongodb+srv://', '')
-                        
-                        # Find the last @ symbol (separates credentials from host)
-                        last_at_index = url_without_prefix.rfind('@')
-                        if last_at_index == -1:
-                            raise ValueError("No @ symbol found in URL")
-                        
-                        # Split into credentials and host parts
-                        credentials_part = url_without_prefix[:last_at_index]
-                        host_part = url_without_prefix[last_at_index + 1:]
-                        
-                        # Split credentials into username and password
-                        colon_index = credentials_part.find(':')
-                        if colon_index == -1:
-                            raise ValueError("No : symbol found in credentials")
-                        
-                        username = credentials_part[:colon_index]
-                        password = credentials_part[colon_index + 1:]
-                        
-                        # Encode username and password
-                        encoded_username = quote_plus(username)
-                        encoded_password = quote_plus(password)
-                        encoded_url = f"mongodb+srv://{encoded_username}:{encoded_password}@{host_part}"
-                        
-                        logger.info(f"URL encoding applied for +srv: {username[:3]}***, {password[:3]}***")
-                        
-                    except Exception as e:
-                        logger.warning(f"Failed to parse mongodb+srv URL: {e}, using original URL")
-                        encoded_url = settings.MONGODB_URL
-                else:
-                    # Handle regular mongodb:// URLs
-                    try:
-                        # Remove mongodb:// prefix
-                        url_without_prefix = settings.MONGODB_URL.replace('mongodb://', '')
-                        
-                        # Find the last @ symbol (separates credentials from host)
-                        last_at_index = url_without_prefix.rfind('@')
-                        if last_at_index == -1:
-                            raise ValueError("No @ symbol found in URL")
-                        
-                        # Split into credentials and host parts
-                        credentials_part = url_without_prefix[:last_at_index]
-                        host_part = url_without_prefix[last_at_index + 1:]
-                        
-                        # Split credentials into username and password
-                        colon_index = credentials_part.find(':')
-                        if colon_index == -1:
-                            raise ValueError("No : symbol found in credentials")
-                        
-                        username = credentials_part[:colon_index]
-                        password = credentials_part[colon_index + 1:]
-                        
-                        # Encode username and password
-                        encoded_username = quote_plus(username)
-                        encoded_password = quote_plus(password)
-                        encoded_url = f"mongodb://{encoded_username}:{encoded_password}@{host_part}"
-                        
-                        logger.info(f"URL encoding applied for regular: {username[:3]}***, {password[:3]}***")
-                        
-                    except Exception as e:
-                        logger.warning(f"Failed to parse mongodb URL: {e}, using original URL")
-                        encoded_url = settings.MONGODB_URL
+                logger.info("Using correct MongoDB URL from Railway")
                 
                 logger.info(f"Attempting MongoDB connection with encoded URL")
                 
