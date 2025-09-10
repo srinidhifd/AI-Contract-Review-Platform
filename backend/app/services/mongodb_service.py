@@ -29,105 +29,25 @@ class MongoDBService:
                 # Create MongoDB client - try different connection approaches
                 connection_successful = False
                 
-                # Use the correct MongoDB URL from Railway
-                encoded_url = "mongodb+srv://srinidhikulkarni25:Srinidhi7@cluster0.khva9st.mongodb.net/contract_review?retryWrites=true&w=majority&appName=Cluster0&tls=true"
+                # Use the correct MongoDB URL from Railway with simplified connection
+                encoded_url = "mongodb+srv://srinidhikulkarni25:Srinidhi7@cluster0.khva9st.mongodb.net/contract_review?retryWrites=true&w=majority&appName=Cluster0"
                 
                 logger.info("Using correct MongoDB URL from Railway")
                 
-                logger.info(f"Attempting MongoDB connection with encoded URL")
-                
-                # Approach 1: Try with SSL and certifi
+                # Simplified connection approach - just try the URL directly
                 try:
                     self.client = AsyncIOMotorClient(
                         encoded_url,
-                        tls=True,
-                        tlsCAFile=certifi.where(),
-                        serverSelectionTimeoutMS=10000,
-                        connectTimeoutMS=10000,
-                        socketTimeoutMS=10000
+                        serverSelectionTimeoutMS=30000,
+                        connectTimeoutMS=30000,
+                        socketTimeoutMS=30000
                     )
                     await self.client.admin.command('ping')
-                    logger.info("MongoDB connected successfully with TLS + certifi")
+                    logger.info("MongoDB connected successfully!")
                     connection_successful = True
-                except Exception as e1:
-                    logger.warning(f"TLS + certifi failed: {e1}")
-                
-                # Approach 2: Try with SSL but no certifi
-                if not connection_successful:
-                    try:
-                        self.client = AsyncIOMotorClient(
-                            encoded_url,
-                            tls=True,
-                            serverSelectionTimeoutMS=10000,
-                            connectTimeoutMS=10000,
-                            socketTimeoutMS=10000
-                        )
-                        await self.client.admin.command('ping')
-                        logger.info("MongoDB connected successfully with TLS only")
-                        connection_successful = True
-                    except Exception as e2:
-                        logger.warning(f"TLS only failed: {e2}")
-                
-                # Approach 3: Try with SSL but allow invalid certificates (for Railway)
-                if not connection_successful:
-                    try:
-                        self.client = AsyncIOMotorClient(
-                            encoded_url,
-                            tls=True,
-                            tlsAllowInvalidCertificates=True,
-                            tlsAllowInvalidHostnames=True,
-                            serverSelectionTimeoutMS=10000,
-                            connectTimeoutMS=10000,
-                            socketTimeoutMS=10000
-                        )
-                        await self.client.admin.command('ping')
-                        logger.info("MongoDB connected successfully with SSL (no cert verification)")
-                        connection_successful = True
-                    except Exception as e3:
-                        logger.warning(f"SSL no cert verification failed: {e3}")
-                
-                # Approach 4: Try without SSL (convert srv to regular with proper hostnames)
-                if not connection_successful:
-                    try:
-                        # Convert mongodb+srv:// to mongodb:// with proper hostnames
-                        url_without_ssl = encoded_url.replace('mongodb+srv://', 'mongodb://')
-                        # Replace cluster0 with the actual shard hostnames
-                        url_without_ssl = url_without_ssl.replace('cluster0.khva9st.mongodb.net', 'ac-ovsylbv-shard-00-00.khva9st.mongodb.net:27017,ac-ovsylbv-shard-00-01.khva9st.mongodb.net:27017,ac-ovsylbv-shard-00-02.khva9st.mongodb.net:27017')
-                        # Add replica set name
-                        if '?' in url_without_ssl:
-                            url_without_ssl += '&replicaSet=atlas-ovsylbv-shard-0'
-                        else:
-                            url_without_ssl += '?replicaSet=atlas-ovsylbv-shard-0'
-                        
-                        logger.info(f"Trying without SSL: {url_without_ssl[:100]}...")
-                        
-                        self.client = AsyncIOMotorClient(
-                            url_without_ssl,
-                            serverSelectionTimeoutMS=10000,
-                            connectTimeoutMS=10000,
-                            socketTimeoutMS=10000
-                        )
-                        await self.client.admin.command('ping')
-                        logger.info("MongoDB connected successfully without SSL")
-                        connection_successful = True
-                    except Exception as e4:
-                        logger.warning(f"No SSL failed: {e4}")
-                
-                # Approach 5: Try original URL without encoding
-                if not connection_successful:
-                    try:
-                        logger.info("Trying original URL without encoding")
-                        self.client = AsyncIOMotorClient(
-                            settings.MONGODB_URL,
-                            serverSelectionTimeoutMS=10000,
-                            connectTimeoutMS=10000,
-                            socketTimeoutMS=10000
-                        )
-                        await self.client.admin.command('ping')
-                        logger.info("MongoDB connected successfully with original URL")
-                        connection_successful = True
-                    except Exception as e5:
-                        logger.warning(f"Original URL failed: {e5}")
+                except Exception as e:
+                    logger.error(f"MongoDB connection failed: {e}")
+                    connection_successful = False
                 
                 if not connection_successful:
                     # MongoDB connection failed - create a mock connection for testing
@@ -144,6 +64,7 @@ class MongoDBService:
                         database=self.client.get_default_database(),
                         document_models=[User, Document, DocumentChunk, ChatMessage, ChatSession]
                     )
+                    logger.info("Beanie ODM initialized successfully")
                 else:
                     logger.warning("Skipping Beanie initialization - MongoDB not connected")
                 
@@ -188,6 +109,11 @@ class MongoDBService:
     async def get_user_by_email(self, email: str) -> Optional[User]:
         """Get user by email (case-insensitive)."""
         try:
+            # Check if MongoDB is connected
+            if self.client is None:
+                logger.warning("MongoDB not connected - cannot fetch user")
+                return None
+            
             # Convert email to lowercase for case-insensitive lookup
             email_lower = email.lower().strip()
             
