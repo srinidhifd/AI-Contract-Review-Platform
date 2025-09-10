@@ -35,34 +35,38 @@ class MongoDBService:
                 is_production = os.getenv('RAILWAY_ENVIRONMENT') is not None or os.getenv('ENVIRONMENT') == 'production'
                 
                 if is_production:
-                    logger.info("Production environment detected - using Railway NO-SSL connection")
-                    # Railway has SSL incompatibility with MongoDB Atlas - use NO-SSL connection
-                    # Convert mongodb+srv:// to mongodb:// with explicit hostnames
-                    no_ssl_url = "mongodb://srinidhikulkarni25:Srinidhi7@ac-ovsylbv-shard-00-00.khva9st.mongodb.net:27017,ac-ovsylbv-shard-00-01.khva9st.mongodb.net:27017,ac-ovsylbv-shard-00-02.khva9st.mongodb.net:27017/contract_review?retryWrites=true&w=majority&replicaSet=atlas-ovsylbv-shard-0"
+                    logger.info("Production environment detected - using Railway SSL connection with bypass")
+                    # Use the original SSL connection string but with Railway-specific SSL bypass
+                    ssl_url = "mongodb+srv://srinidhikulkarni25:Srinidhi7@cluster0.khva9st.mongodb.net/contract_review?retryWrites=true&w=majority&appName=Cluster0"
                     
                     try:
-                        # Use NO-SSL connection for Railway (SSL is incompatible)
+                        # Use SSL with Railway-specific bypass settings
                         self.client = AsyncIOMotorClient(
-                            no_ssl_url,
-                            serverSelectionTimeoutMS=30000,
-                            connectTimeoutMS=30000,
-                            socketTimeoutMS=30000,
-                            maxPoolSize=10,
+                            ssl_url,
+                            tls=True,
+                            tlsAllowInvalidCertificates=True,
+                            tlsAllowInvalidHostnames=True,
+                            serverSelectionTimeoutMS=45000,
+                            connectTimeoutMS=45000,
+                            socketTimeoutMS=45000,
+                            maxPoolSize=1,
                             minPoolSize=1,
-                            maxIdleTimeMS=30000,
-                            retryWrites=True
+                            maxIdleTimeMS=45000,
+                            retryWrites=True,
+                            retryReads=True
                         )
                         await self.client.admin.command('ping')
-                        logger.info("MongoDB connected successfully with NO-SSL (Railway production)!")
+                        logger.info("MongoDB connected successfully with SSL bypass (Railway production)!")
                         connection_successful = True
                     except Exception as e1:
-                        logger.warning(f"Railway NO-SSL connection failed: {e1}")
+                        logger.warning(f"SSL bypass failed: {e1}")
                         
-                        # Fallback: Try with different non-SSL approach
+                        # Fallback: Try with different SSL approach
                         try:
-                            # Try with different connection parameters
+                            # Try with different SSL settings
                             self.client = AsyncIOMotorClient(
-                                no_ssl_url,
+                                ssl_url,
+                                tls=True,
                                 serverSelectionTimeoutMS=60000,
                                 connectTimeoutMS=60000,
                                 socketTimeoutMS=60000,
@@ -73,10 +77,10 @@ class MongoDBService:
                                 retryReads=True
                             )
                             await self.client.admin.command('ping')
-                            logger.info("MongoDB connected successfully with extended NO-SSL (Railway production)!")
+                            logger.info("MongoDB connected successfully with standard SSL (Railway production)!")
                             connection_successful = True
                         except Exception as e2:
-                            logger.error(f"All Railway NO-SSL connection attempts failed: {e2}")
+                            logger.error(f"All Railway SSL connection attempts failed: {e2}")
                             connection_successful = False
                 else:
                     logger.info("Development environment detected - trying SSL first")
