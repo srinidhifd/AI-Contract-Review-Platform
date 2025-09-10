@@ -36,49 +36,49 @@ class MongoDBService:
                 
                 if is_production:
                     logger.info("Production environment detected - using Railway MongoDB Atlas connection")
-                    # Use MongoDB Atlas connection string with Railway-compatible SSL settings
-                    atlas_url = "mongodb+srv://srinidhikulkarni25:Srinidhi7@cluster0.khva9st.mongodb.net/contract_review?retryWrites=true&w=majority&appName=Cluster0"
+                    # Use MongoDB Atlas connection string with proper SSL settings (based on research)
+                    atlas_url = "mongodb+srv://srinidhikulkarni25:Srinidhi7@cluster0.khva9st.mongodb.net/contract_review?retryWrites=true&w=majority&ssl=true"
                     
                     try:
-                        # Use MongoDB Atlas with Railway-compatible SSL settings (based on research)
-                        import ssl
+                        # Use MongoDB Atlas with proper SSL configuration (research-based solution)
                         self.client = AsyncIOMotorClient(
                             atlas_url,
-                            ssl=True,
-                            ssl_cert_reqs=ssl.CERT_NONE,  # Disable certificate verification for Railway
-                            serverSelectionTimeoutMS=60000,
-                            connectTimeoutMS=60000,
-                            socketTimeoutMS=60000,
-                            maxPoolSize=1,
+                            tls=True,
+                            tlsAllowInvalidCertificates=False,  # Proper certificate validation
+                            serverSelectionTimeoutMS=30000,
+                            connectTimeoutMS=30000,
+                            socketTimeoutMS=30000,
+                            maxPoolSize=10,
                             minPoolSize=1,
-                            maxIdleTimeMS=60000,
+                            maxIdleTimeMS=30000,
                             retryWrites=True,
                             retryReads=True
                         )
                         await self.client.admin.command('ping')
-                        logger.info("MongoDB connected successfully with Railway SSL bypass (production)!")
+                        logger.info("MongoDB connected successfully with proper SSL (Railway production)!")
                         connection_successful = True
                     except Exception as e1:
-                        logger.warning(f"Railway SSL bypass failed: {e1}")
+                        logger.warning(f"Proper SSL connection failed: {e1}")
                         
                         # Fallback: Try with different SSL approach
                         try:
-                            # Try with tlsAllowInvalidCertificates approach
+                            # Try with different SSL settings for Railway
+                            fallback_url = "mongodb+srv://srinidhikulkarni25:Srinidhi7@cluster0.khva9st.mongodb.net/contract_review?retryWrites=true&w=majority&tls=true"
                             self.client = AsyncIOMotorClient(
-                                atlas_url,
+                                fallback_url,
                                 tls=True,
                                 tlsAllowInvalidCertificates=True,
-                                serverSelectionTimeoutMS=90000,
-                                connectTimeoutMS=90000,
-                                socketTimeoutMS=90000,
-                                maxPoolSize=1,
+                                serverSelectionTimeoutMS=60000,
+                                connectTimeoutMS=60000,
+                                socketTimeoutMS=60000,
+                                maxPoolSize=5,
                                 minPoolSize=1,
-                                maxIdleTimeMS=90000,
+                                maxIdleTimeMS=60000,
                                 retryWrites=True,
                                 retryReads=True
                             )
                             await self.client.admin.command('ping')
-                            logger.info("MongoDB connected successfully with TLS invalid certs (Railway production)!")
+                            logger.info("MongoDB connected successfully with fallback SSL (Railway production)!")
                             connection_successful = True
                         except Exception as e2:
                             logger.error(f"All Railway MongoDB Atlas connection attempts failed: {e2}")
@@ -121,23 +121,17 @@ class MongoDBService:
                             connection_successful = False
                 
                 if not connection_successful:
-                    # MongoDB connection failed - create a mock connection for testing
-                    logger.warning("MongoDB connection failed - using mock connection for testing")
-                    self.client = None
-                    self.database = settings.MONGODB_DATABASE
-                    # Don't raise exception - continue with mock connection
-                else:
-                    self.database = settings.MONGODB_DATABASE
+                    logger.error("MongoDB connection failed - application cannot start without database")
+                    raise Exception("MongoDB connection failed - application requires database connection")
                 
-                # Initialize Beanie with document models (only if MongoDB is connected)
-                if self.client is not None:
-                    await init_beanie(
-                        database=self.client.get_default_database(),
-                        document_models=[User, Document, DocumentChunk, ChatMessage, ChatSession]
-                    )
-                    logger.info("Beanie ODM initialized successfully")
-                else:
-                    logger.warning("Skipping Beanie initialization - MongoDB not connected")
+                self.database = settings.MONGODB_DATABASE
+                
+                # Initialize Beanie with document models
+                await init_beanie(
+                    database=self.client.get_default_database(),
+                    document_models=[User, Document, DocumentChunk, ChatMessage, ChatSession]
+                )
+                logger.info("Beanie ODM initialized successfully")
                 
                 logger.info(f"Connected to MongoDB Atlas. Database: {self.database}")
                 
