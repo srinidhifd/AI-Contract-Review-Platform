@@ -35,23 +35,62 @@ class MongoDBService:
                 is_production = os.getenv('RAILWAY_ENVIRONMENT') is not None or os.getenv('ENVIRONMENT') == 'production'
                 
                 if is_production:
-                    logger.info("Production environment detected - using Railway-optimized connection")
-                    # Use non-SSL connection for Railway production
-                    non_ssl_url = "mongodb://srinidhikulkarni25:Srinidhi7@ac-ovsylbv-shard-00-00.khva9st.mongodb.net:27017,ac-ovsylbv-shard-00-01.khva9st.mongodb.net:27017,ac-ovsylbv-shard-00-02.khva9st.mongodb.net:27017/contract_review?retryWrites=true&w=majority&replicaSet=atlas-ovsylbv-shard-0"
+                    logger.info("Production environment detected - using Railway-optimized SSL connection")
+                    # Use SSL connection with Railway-specific SSL bypass
+                    ssl_url = "mongodb+srv://srinidhikulkarni25:Srinidhi7@cluster0.khva9st.mongodb.net/contract_review?retryWrites=true&w=majority&appName=Cluster0"
                     
                     try:
+                        # Try with SSL but allow invalid certificates for Railway
                         self.client = AsyncIOMotorClient(
-                            non_ssl_url,
-                            serverSelectionTimeoutMS=15000,
-                            connectTimeoutMS=15000,
-                            socketTimeoutMS=15000
+                            ssl_url,
+                            tls=True,
+                            tlsAllowInvalidCertificates=True,
+                            tlsAllowInvalidHostnames=True,
+                            serverSelectionTimeoutMS=20000,
+                            connectTimeoutMS=20000,
+                            socketTimeoutMS=20000
                         )
                         await self.client.admin.command('ping')
-                        logger.info("MongoDB connected successfully with non-SSL (Railway production)!")
+                        logger.info("MongoDB connected successfully with SSL bypass (Railway production)!")
                         connection_successful = True
-                    except Exception as e:
-                        logger.error(f"Railway production connection failed: {e}")
-                        connection_successful = False
+                    except Exception as e1:
+                        logger.warning(f"SSL bypass failed: {e1}")
+                        
+                        # Fallback: Try with SSL but no cert verification
+                        try:
+                            self.client = AsyncIOMotorClient(
+                                ssl_url,
+                                tls=True,
+                                serverSelectionTimeoutMS=20000,
+                                connectTimeoutMS=20000,
+                                socketTimeoutMS=20000
+                            )
+                            await self.client.admin.command('ping')
+                            logger.info("MongoDB connected successfully with SSL (Railway production)!")
+                            connection_successful = True
+                        except Exception as e2:
+                            logger.warning(f"SSL fallback failed: {e2}")
+                            
+                            # Final fallback: Try with different SSL approach
+                            try:
+                                # Try with longer timeouts and different SSL settings
+                                self.client = AsyncIOMotorClient(
+                                    ssl_url,
+                                    tls=True,
+                                    tlsAllowInvalidCertificates=True,
+                                    tlsAllowInvalidHostnames=True,
+                                    serverSelectionTimeoutMS=30000,
+                                    connectTimeoutMS=30000,
+                                    socketTimeoutMS=30000,
+                                    maxPoolSize=1,
+                                    minPoolSize=1
+                                )
+                                await self.client.admin.command('ping')
+                                logger.info("MongoDB connected successfully with extended SSL settings (Railway production)!")
+                                connection_successful = True
+                            except Exception as e3:
+                                logger.error(f"All Railway production connection attempts failed: {e3}")
+                                connection_successful = False
                 else:
                     logger.info("Development environment detected - trying SSL first")
                     # Try SSL first, then fallback to non-SSL for Railway compatibility
