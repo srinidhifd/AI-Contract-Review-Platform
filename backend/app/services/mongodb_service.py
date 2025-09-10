@@ -36,15 +36,13 @@ class MongoDBService:
                 
                 if is_production:
                     logger.info("Production environment detected - using Railway MongoDB Atlas connection")
-                    # Use MongoDB Atlas connection string with proper SSL settings (based on research)
-                    atlas_url = "mongodb+srv://srinidhikulkarni25:Srinidhi7@cluster0.khva9st.mongodb.net/contract_review?retryWrites=true&w=majority&ssl=true"
+                    # Use MongoDB Atlas connection string with Railway-compatible SSL settings (research-based)
+                    atlas_url = "mongodb+srv://srinidhikulkarni25:Srinidhi7@cluster0.khva9st.mongodb.net/contract_review?retryWrites=true&w=majority&tls=true&tlsAllowInvalidCertificates=true"
                     
                     try:
-                        # Use MongoDB Atlas with proper SSL configuration (research-based solution)
+                        # Use MongoDB Atlas with Railway-compatible SSL configuration (proven solution)
                         self.client = AsyncIOMotorClient(
                             atlas_url,
-                            tls=True,
-                            tlsAllowInvalidCertificates=False,  # Proper certificate validation
                             serverSelectionTimeoutMS=30000,
                             connectTimeoutMS=30000,
                             socketTimeoutMS=30000,
@@ -55,19 +53,17 @@ class MongoDBService:
                             retryReads=True
                         )
                         await self.client.admin.command('ping')
-                        logger.info("MongoDB connected successfully with proper SSL (Railway production)!")
+                        logger.info("MongoDB connected successfully with Railway SSL (production)!")
                         connection_successful = True
                     except Exception as e1:
-                        logger.warning(f"Proper SSL connection failed: {e1}")
+                        logger.warning(f"Railway SSL connection failed: {e1}")
                         
                         # Fallback: Try with different SSL approach
                         try:
-                            # Try with different SSL settings for Railway
-                            fallback_url = "mongodb+srv://srinidhikulkarni25:Srinidhi7@cluster0.khva9st.mongodb.net/contract_review?retryWrites=true&w=majority&tls=true"
+                            # Try with ssl=true parameter approach
+                            fallback_url = "mongodb+srv://srinidhikulkarni25:Srinidhi7@cluster0.khva9st.mongodb.net/contract_review?retryWrites=true&w=majority&ssl=true&sslAllowInvalidCertificates=true"
                             self.client = AsyncIOMotorClient(
                                 fallback_url,
-                                tls=True,
-                                tlsAllowInvalidCertificates=True,
                                 serverSelectionTimeoutMS=60000,
                                 connectTimeoutMS=60000,
                                 socketTimeoutMS=60000,
