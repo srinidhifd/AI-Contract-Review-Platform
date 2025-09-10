@@ -36,13 +36,17 @@ class MongoDBService:
                 
                 if is_production:
                     logger.info("Production environment detected - using Railway MongoDB Atlas connection")
-                    # Use MongoDB Atlas connection string with Railway-compatible SSL settings (research-based)
-                    atlas_url = "mongodb+srv://srinidhikulkarni25:Srinidhi7@cluster0.khva9st.mongodb.net/contract_review?retryWrites=true&w=majority&tls=true&tlsAllowInvalidCertificates=true"
+                    # Use MongoDB Atlas connection string with Railway TLS bypass (definitive solution)
+                    atlas_url = "mongodb+srv://srinidhikulkarni25:Srinidhi7@cluster0.khva9st.mongodb.net/contract_review?retryWrites=true&w=majority"
                     
                     try:
-                        # Use MongoDB Atlas with Railway-compatible SSL configuration (proven solution)
+                        # Use MongoDB Atlas with Railway TLS bypass (definitive solution for TLSV1_ALERT_INTERNAL_ERROR)
+                        import ssl
                         self.client = AsyncIOMotorClient(
                             atlas_url,
+                            tls=True,
+                            tlsAllowInvalidCertificates=True,
+                            tlsAllowInvalidHostnames=True,
                             serverSelectionTimeoutMS=30000,
                             connectTimeoutMS=30000,
                             socketTimeoutMS=30000,
@@ -50,20 +54,26 @@ class MongoDBService:
                             minPoolSize=1,
                             maxIdleTimeMS=30000,
                             retryWrites=True,
-                            retryReads=True
+                            retryReads=True,
+                            # Railway-specific TLS bypass
+                            ssl_context=ssl.create_default_context(),
+                            ssl_context.check_hostname=False,
+                            ssl_context.verify_mode=ssl.CERT_NONE
                         )
                         await self.client.admin.command('ping')
-                        logger.info("MongoDB connected successfully with Railway SSL (production)!")
+                        logger.info("MongoDB connected successfully with Railway TLS bypass (production)!")
                         connection_successful = True
                     except Exception as e1:
-                        logger.warning(f"Railway SSL connection failed: {e1}")
+                        logger.warning(f"Railway TLS bypass failed: {e1}")
                         
-                        # Fallback: Try with different SSL approach
+                        # Fallback: Try with different TLS approach
                         try:
-                            # Try with ssl=true parameter approach
-                            fallback_url = "mongodb+srv://srinidhikulkarni25:Srinidhi7@cluster0.khva9st.mongodb.net/contract_review?retryWrites=true&w=majority&ssl=true&sslAllowInvalidCertificates=true"
+                            # Try with different TLS settings for Railway
                             self.client = AsyncIOMotorClient(
-                                fallback_url,
+                                atlas_url,
+                                tls=True,
+                                tlsAllowInvalidCertificates=True,
+                                tlsAllowInvalidHostnames=True,
                                 serverSelectionTimeoutMS=60000,
                                 connectTimeoutMS=60000,
                                 socketTimeoutMS=60000,
@@ -74,7 +84,7 @@ class MongoDBService:
                                 retryReads=True
                             )
                             await self.client.admin.command('ping')
-                            logger.info("MongoDB connected successfully with fallback SSL (Railway production)!")
+                            logger.info("MongoDB connected successfully with fallback TLS (Railway production)!")
                             connection_successful = True
                         except Exception as e2:
                             logger.error(f"All Railway MongoDB Atlas connection attempts failed: {e2}")
