@@ -72,15 +72,7 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# Add CORS middleware
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=settings.cors_origins_list,
-    allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allow_headers=["*"],
-    expose_headers=["*"]
-)
+# CORS is handled by custom middleware below
 
 # Add custom CORS middleware to handle OPTIONS requests
 from fastapi import Request
@@ -88,7 +80,8 @@ from fastapi.responses import Response
 
 @app.middleware("http")
 async def cors_handler(request: Request, call_next):
-    """Custom CORS handler for OPTIONS requests."""
+    """Custom CORS handler for ALL requests."""
+    # Handle preflight OPTIONS requests
     if request.method == "OPTIONS":
         response = Response()
         response.headers["Access-Control-Allow-Origin"] = "https://ai-contract-review-platform.vercel.app"
@@ -98,7 +91,16 @@ async def cors_handler(request: Request, call_next):
         response.headers["Access-Control-Max-Age"] = "600"
         return response
     
+    # Process the request
     response = await call_next(request)
+    
+    # Add CORS headers to ALL responses
+    response.headers["Access-Control-Allow-Origin"] = "https://ai-contract-review-platform.vercel.app"
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
+    response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
+    response.headers["Access-Control-Allow-Credentials"] = "true"
+    response.headers["Access-Control-Expose-Headers"] = "*"
+    
     return response
 
 # CORS preflight requests are handled by CORSMiddleware
