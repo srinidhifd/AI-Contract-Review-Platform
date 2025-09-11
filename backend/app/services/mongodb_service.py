@@ -29,76 +29,53 @@ class MongoDBService:
                 # Create MongoDB client - try different connection approaches
                 connection_successful = False
                 
-                # Production-focused MongoDB connection for Railway
-                # Check if we're in production (Railway) and use appropriate connection method
+                # Production-focused MongoDB connection for Render
+                # Check if we're in production (Render) and use appropriate connection method
                 import os
-                is_production = os.getenv('RAILWAY_ENVIRONMENT') is not None or os.getenv('ENVIRONMENT') == 'production'
+                is_production = os.getenv('RENDER') is not None or os.getenv('ENVIRONMENT') == 'production'
                 
                 if is_production:
-                    logger.info("Production environment detected - using Railway MongoDB Atlas connection")
-                    # Railway has fundamental OpenSSL incompatibility with MongoDB Atlas TLS
-                    # This is a known platform limitation - use alternative approach
+                    logger.info("Production environment detected - using Render MongoDB Atlas connection")
+                    # Use MongoDB Atlas connection string with Render-compatible settings
+                    atlas_url = "mongodb+srv://srinidhikulkarni25:Srinidhi7@cluster0.khva9st.mongodb.net/contract_review?retryWrites=true&w=majority"
                     
-                    # For now, use a mock connection that allows the app to start
-                    # This is a temporary solution until Railway fixes their OpenSSL issue
-                    logger.warning("Railway OpenSSL TLS incompatibility detected - using mock connection")
-                    logger.warning("This is a temporary solution for Railway deployment")
-                    
-                    # Create a mock client that allows the app to start
-                    class MockMongoClient:
-                        def __init__(self):
-                            self.database = "contract_review"
-                        
-                        def get_default_database(self):
-                            return self
-                        
-                        async def admin(self):
-                            return self
-                        
-                        async def command(self, cmd):
-                            if cmd == 'ping':
-                                return {'ok': 1}
-                            return {}
-                    
-                    self.client = MockMongoClient()
-                    connection_successful = True
-                    logger.info("MongoDB mock connection established (Railway production - temporary solution)")
+                    try:
+                        # Render has proper OpenSSL compatibility - use standard TLS
+                        self.client = AsyncIOMotorClient(
+                            atlas_url,
+                            serverSelectionTimeoutMS=30000,
+                            connectTimeoutMS=30000,
+                            socketTimeoutMS=30000,
+                            maxPoolSize=10,
+                            minPoolSize=1,
+                            maxIdleTimeMS=30000,
+                            retryWrites=True,
+                            retryReads=True
+                        )
+                        await self.client.admin.command('ping')
+                        logger.info("MongoDB connected successfully with Render (production)!")
+                        connection_successful = True
+                    except Exception as e1:
+                        logger.error(f"Render MongoDB Atlas connection failed: {e1}")
+                        connection_successful = False
                 else:
-                    logger.info("Development environment detected - trying SSL first")
-                    # Try SSL first, then fallback to non-SSL for Railway compatibility
-                    
-                    # Approach 1: Try SSL connection (for local development)
-                    ssl_url = "mongodb+srv://srinidhikulkarni25:Srinidhi7@cluster0.khva9st.mongodb.net/contract_review?retryWrites=true&w=majority&appName=Cluster0"
+                    logger.info("Development environment detected - using local MongoDB Atlas connection")
+                    # Use MongoDB Atlas connection string for local development
+                    atlas_url = "mongodb+srv://srinidhikulkarni25:Srinidhi7@cluster0.khva9st.mongodb.net/contract_review?retryWrites=true&w=majority&appName=Cluster0"
                     
                     try:
                         self.client = AsyncIOMotorClient(
-                            ssl_url,
+                            atlas_url,
                             serverSelectionTimeoutMS=15000,
                             connectTimeoutMS=15000,
                             socketTimeoutMS=15000
                         )
                         await self.client.admin.command('ping')
-                        logger.info("MongoDB connected successfully with SSL!")
+                        logger.info("MongoDB connected successfully with SSL (development)!")
                         connection_successful = True
                     except Exception as e1:
-                        logger.warning(f"SSL connection failed: {e1}")
-                        
-                        # Approach 2: Try non-SSL connection (for Railway production)
-                        non_ssl_url = "mongodb://srinidhikulkarni25:Srinidhi7@ac-ovsylbv-shard-00-00.khva9st.mongodb.net:27017,ac-ovsylbv-shard-00-01.khva9st.mongodb.net:27017,ac-ovsylbv-shard-00-02.khva9st.mongodb.net:27017/contract_review?retryWrites=true&w=majority&replicaSet=atlas-ovsylbv-shard-0"
-                        
-                        try:
-                            self.client = AsyncIOMotorClient(
-                                non_ssl_url,
-                                serverSelectionTimeoutMS=15000,
-                                connectTimeoutMS=15000,
-                                socketTimeoutMS=15000
-                            )
-                            await self.client.admin.command('ping')
-                            logger.info("MongoDB connected successfully with non-SSL (Railway compatible)!")
-                            connection_successful = True
-                        except Exception as e2:
-                            logger.error(f"Both SSL and non-SSL connections failed: {e2}")
-                            connection_successful = False
+                        logger.error(f"Development MongoDB Atlas connection failed: {e1}")
+                        connection_successful = False
                 
                 if not connection_successful:
                     logger.error("MongoDB connection failed - application cannot start without database")
@@ -106,18 +83,12 @@ class MongoDBService:
                 
                 self.database = settings.MONGODB_DATABASE
                 
-                # Initialize Beanie with document models (skip for mock connection)
-                if not isinstance(self.client, type(self.client)) or hasattr(self.client, 'admin'):
-                    try:
-                        await init_beanie(
-                            database=self.client.get_default_database(),
-                            document_models=[User, Document, DocumentChunk, ChatMessage, ChatSession]
-                        )
-                        logger.info("Beanie ODM initialized successfully")
-                    except Exception as e:
-                        logger.warning(f"Beanie initialization failed (using mock): {e}")
-                else:
-                    logger.warning("Skipping Beanie initialization for mock connection")
+                # Initialize Beanie with document models
+                await init_beanie(
+                    database=self.client.get_default_database(),
+                    document_models=[User, Document, DocumentChunk, ChatMessage, ChatSession]
+                )
+                logger.info("Beanie ODM initialized successfully")
                 
                 logger.info(f"Connected to MongoDB Atlas. Database: {self.database}")
                 

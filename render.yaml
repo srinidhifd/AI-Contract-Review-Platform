@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: ai-contract-review-backend
+    env: python
+    plan: starter
+    buildCommand: "cd backend && pip install -r requirements.txt"
+    startCommand: "cd backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: MONGODB_URL
+        value: mongodb+srv://srinidhikulkarni25:Srinidhi7@cluster0.khva9st.mongodb.net/contract_review?retryWrites=true&w=majority
+      - key: MONGODB_DATABASE
+        value: contract_review
+      - key: SECRET_KEY
+        value: your-secret-key-here
+      - key: OPENAI_API_KEY
+        value: your-openai-api-key-here
+      - key: ENVIRONMENT
+        value: production
+      - key: CORS_ORIGINS
+        value: https://ai-contract-review-platform.vercel.app

@@ -16,6 +16,6 @@
     }
   ],
   "env": {
-    "VITE_API_BASE_URL": "https://ai-contract-review-platform-production.up.railway.app"
+    "VITE_API_BASE_URL": "https://ai-contract-review-backend.onrender.com"
   }
 }
