@@ -3,8 +3,8 @@ services:
     name: ai-contract-review-backend
     env: python
     plan: starter
-    buildCommand: "cd backend && curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && source $HOME/.cargo/env && pip install -r requirements.txt"
-    startCommand: "cd backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+    buildCommand: "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && source $HOME/.cargo/env && pip install -r requirements.txt"
+    startCommand: "uvicorn app.main:app --host 0.0.0.0 --port $PORT"
     envVars:
       - key: MONGODB_URL
         value: mongodb+srv://srinidhikulkarni25:Srinidhi7@cluster0.khva9st.mongodb.net/contract_review?retryWrites=true&w=majority
