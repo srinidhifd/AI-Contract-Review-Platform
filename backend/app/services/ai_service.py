@@ -1,5 +1,5 @@
 import os
-from mistralai import Mistral
+import requests
 from ..models.contract import ContractSummary, RiskAssessment
 from ..config import AIConfig, settings
 from typing import List, Dict, Any
@@ -21,14 +21,14 @@ class AIService:
     
     def __init__(self):
         """Initialize AI service with configuration"""
-        self.config = AIConfig.get_mistral_config()
+        self.config = AIConfig.get_openai_config()
         self.analysis_config = AIConfig.get_analysis_config()
         
         # Performance tracking for better time estimates
         self.performance_history = deque(maxlen=50)
         self.model_response_times = {
-            "mistral-large-latest": {"avg": 18, "min": 10, "max": 35},  # Updated based on actual performance
-            "mistral-medium-latest": {"avg": 12, "min": 6, "max": 22}
+            "gpt-4": {"avg": 18, "min": 10, "max": 35},  # Updated based on actual performance
+            "gpt-3.5-turbo": {"avg": 12, "min": 6, "max": 22}
         }
         
         # Initialize client only if API key is available
@@ -41,15 +41,16 @@ class AIService:
             else:
                 logger.warning("API key is empty string")
             try:
-                self.client = Mistral(api_key=self.config["api_key"])
+                from openai import OpenAI
+                self.client = OpenAI(api_key=self.config["api_key"])
                 logger.info(f"AI Service initialized with model: {self.config['model']}")
-                logger.info(f"Mistral client type: {type(self.client)}")
+                logger.info(f"OpenAI client type: {type(self.client)}")
                 logger.info(f"Available methods: {[m for m in dir(self.client) if not m.startswith('_')]}")
             except Exception as e:
-                logger.warning(f"Failed to initialize Mistral client: {e}")
+                logger.warning(f"Failed to initialize OpenAI client: {e}")
                 self.client = None
         else:
-            logger.warning("Mistral API key not configured - using mock responses")
+            logger.warning("OpenAI API key not configured - using mock responses")
     
     # ==================== TIME ESTIMATION ====================
     
@@ -1116,7 +1117,8 @@ IMPORTANT:
             json_match = re.search(r'\{.*\}', text, re.DOTALL)
             if json_match:
                 return json.loads(json_match.group(0))
-        except:
+        except Exception as e:
+            logger.warning(f"Failed to update performance history: {e}")
             pass
         
         # Fallback: extract sections manually
@@ -1289,7 +1291,8 @@ IMPORTANT:
             
             return text.strip() or "I couldn't process that response properly. Please try asking your question again."
             
-        except Exception:
+        except Exception as e:
+            logger.error(f"Failed to process AI response: {e}")
             return "I couldn't process that response properly. Please try asking your question again."
     
     def _get_user_friendly_error(self, error: str) -> str:
