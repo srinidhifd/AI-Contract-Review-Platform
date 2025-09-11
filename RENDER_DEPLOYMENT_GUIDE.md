@@ -33,8 +33,9 @@
 3. Configure:
    - **Name**: `ai-contract-review-backend`
    - **Environment**: `Python 3`
-   - **Build Command**: `cd backend && pip install -r requirements.txt`
-   - **Start Command**: `cd backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT`
+   - **Root Directory**: `backend`
+   - **Build Command**: `pip install -r requirements.txt`
+   - **Start Command**: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
 
 ### **Step 3: Set Environment Variables**
 In Render dashboard, add these environment variables:
