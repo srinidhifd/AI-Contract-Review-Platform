@@ -40,8 +40,8 @@ async def lifespan(app: FastAPI):
         logger.info("MongoDB connection established")
     except Exception as e:
         logger.error(f"Failed to connect to MongoDB: {e}")
-        logger.warning("Application starting without MongoDB connection - some features may not work")
-        # Don't raise exception - let the app start and retry connection later
+        logger.error("Application cannot start without MongoDB connection")
+        raise Exception("MongoDB connection required for application startup")
     
     # Test OpenAI service
     try:

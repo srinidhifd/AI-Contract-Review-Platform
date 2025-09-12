@@ -40,7 +40,7 @@ class MongoDBService:
                     atlas_url = "mongodb+srv://srinidhikulkarni25:Srinidhi7@cluster0.khva9st.mongodb.net/contract_review?retryWrites=true&w=majority"
                     
                     try:
-                        # Render has proper OpenSSL compatibility - use standard TLS
+                        # Render-specific MongoDB connection with SSL fixes
                         self.client = AsyncIOMotorClient(
                             atlas_url,
                             serverSelectionTimeoutMS=30000,
@@ -50,7 +50,11 @@ class MongoDBService:
                             minPoolSize=1,
                             maxIdleTimeMS=30000,
                             retryWrites=True,
-                            retryReads=True
+                            retryReads=True,
+                            tls=True,
+                            tlsAllowInvalidCertificates=False,
+                            tlsAllowInvalidHostnames=False,
+                            tlsInsecure=False
                         )
                         await self.client.admin.command('ping')
                         logger.info("MongoDB connected successfully with Render (production)!")
