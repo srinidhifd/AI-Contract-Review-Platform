@@ -36,8 +36,8 @@ class MongoDBService:
                 
                 if is_production:
                     logger.info("Production environment detected - using Render MongoDB Atlas connection")
-                    # Use MongoDB Atlas connection string with Render-compatible settings
-                    atlas_url = "mongodb+srv://srinidhikulkarni25:Srinidhi7@cluster0.khva9st.mongodb.net/contract_review?retryWrites=true&w=majority"
+                    # Use direct connection to bypass SSL issues
+                    atlas_url = "mongodb://srinidhikulkarni25:Srinidhi7@ac-ovsylbv-shard-00-00.khva9st.mongodb.net:27017,ac-ovsylbv-shard-00-01.khva9st.mongodb.net:27017,ac-ovsylbv-shard-00-02.khva9st.mongodb.net:27017/contract_review?ssl=true&replicaSet=atlas-ovsylbv-shard-0&authSource=admin&retryWrites=true&w=majority"
                     
                     try:
                         # Industry-standard MongoDB Atlas connection for production
@@ -73,7 +73,8 @@ class MongoDBService:
                                 retryWrites=True,
                                 retryReads=True,
                                 tls=True,
-                                tlsAllowInvalidCertificates=True
+                                tlsAllowInvalidCertificates=True,
+                                tlsAllowInvalidHostnames=True
                             )
                             await self.client.admin.command('ping')
                             logger.info("MongoDB connected with fallback SSL method!")
@@ -88,8 +89,18 @@ class MongoDBService:
                                 logger.info("MongoDB connected with minimal parameters!")
                                 connection_successful = True
                             except Exception as e3:
-                                logger.error(f"All connection methods failed: {e3}")
-                                connection_successful = False
+                                logger.error(f"Minimal connection failed: {e3}")
+                                
+                                # Fallback 3: Try without SSL (last resort for production)
+                                try:
+                                    no_ssl_url = "mongodb://srinidhikulkarni25:Srinidhi7@ac-ovsylbv-shard-00-00.khva9st.mongodb.net:27017,ac-ovsylbv-shard-00-01.khva9st.mongodb.net:27017,ac-ovsylbv-shard-00-02.khva9st.mongodb.net:27017/contract_review?replicaSet=atlas-ovsylbv-shard-0&authSource=admin&retryWrites=true&w=majority"
+                                    self.client = AsyncIOMotorClient(no_ssl_url)
+                                    await self.client.admin.command('ping')
+                                    logger.info("MongoDB connected without SSL (production fallback)!")
+                                    connection_successful = True
+                                except Exception as e4:
+                                    logger.error(f"All connection methods failed: {e4}")
+                                    connection_successful = False
                 else:
                     logger.info("Development environment detected - using local MongoDB Atlas connection")
                     # Use MongoDB Atlas connection string for local development
