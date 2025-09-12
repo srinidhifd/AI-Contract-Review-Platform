@@ -3,7 +3,7 @@ services:
     name: ai-contract-review-backend
     env: python
     plan: starter
-    buildCommand: "pip install --no-deps openai==1.3.7 && pip install -r requirements.txt"
+    buildCommand: "pip install -r requirements.txt"
     startCommand: "uvicorn app.main:app --host 0.0.0.0 --port $PORT"
     envVars:
       - key: MONGODB_URL
@@ -12,8 +12,8 @@ services:
         value: contract_review
       - key: SECRET_KEY
         value: your-secret-key-here
-      - key: OPENAI_API_KEY
-        value: your-openai-api-key-here
+      - key: MISTRAL_API_KEY
+        value: your-mistral-api-key-here
       - key: ENVIRONMENT
         value: production
       - key: CORS_ORIGINS

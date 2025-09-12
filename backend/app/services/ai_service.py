@@ -21,7 +21,7 @@ class AIService:
     
     def __init__(self):
         """Initialize AI service with configuration"""
-        self.config = AIConfig.get_openai_config()
+        self.config = AIConfig.get_mistral_config()
         self.analysis_config = AIConfig.get_analysis_config()
         
         # Performance tracking for better time estimates
@@ -41,16 +41,15 @@ class AIService:
             else:
                 logger.warning("API key is empty string")
             try:
-                from openai import OpenAI
-                self.client = OpenAI(api_key=self.config["api_key"])
+                # Initialize Mistral AI client (HTTP-based, no OpenAI dependency)
+                self.client = "mistral_ai"  # Simple flag to indicate AI is available
                 logger.info(f"AI Service initialized with model: {self.config['model']}")
-                logger.info(f"OpenAI client type: {type(self.client)}")
-                logger.info(f"Available methods: {[m for m in dir(self.client) if not m.startswith('_')]}")
+                logger.info("Using Mistral AI via HTTP API")
             except Exception as e:
-                logger.warning(f"Failed to initialize OpenAI client: {e}")
+                logger.warning(f"Failed to initialize AI service: {e}")
                 self.client = None
         else:
-            logger.warning("OpenAI API key not configured - using mock responses")
+            logger.warning("Mistral AI API key not configured - using mock responses")
     
     # ==================== TIME ESTIMATION ====================
     

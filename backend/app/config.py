@@ -30,11 +30,11 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 999999999  # Truly unlimited (999999999 minutes = ~1900 years)
     
-    # OpenAI Configuration
-    OPENAI_API_KEY: str = Field(..., env="OPENAI_API_KEY")
-    OPENAI_MODEL: str = Field(default="gpt-4", env="OPENAI_MODEL")
-    OPENAI_MAX_TOKENS: int = Field(default=4000, env="OPENAI_MAX_TOKENS")
-    OPENAI_TEMPERATURE: float = Field(default=0.1, env="OPENAI_TEMPERATURE")
+    # Mistral AI Configuration
+    MISTRAL_API_KEY: str = Field(..., env="MISTRAL_API_KEY")
+    MISTRAL_MODEL: str = Field(default="mistral-large-latest", env="MISTRAL_MODEL")
+    MISTRAL_MAX_TOKENS: int = Field(default=4000, env="MISTRAL_MAX_TOKENS")
+    MISTRAL_TEMPERATURE: float = Field(default=0.1, env="MISTRAL_TEMPERATURE")
     
     # MongoDB Configuration
     MONGODB_URL: str = Field(..., env="MONGODB_URL")
@@ -95,13 +95,13 @@ class AIConfig:
     """AI service configuration and prompt templates."""
     
     @staticmethod
-    def get_openai_config() -> Dict[str, Any]:
-        """Get OpenAI configuration."""
+    def get_mistral_config() -> Dict[str, Any]:
+        """Get Mistral AI configuration."""
         return {
-            "api_key": settings.OPENAI_API_KEY,
-            "model": settings.OPENAI_MODEL,
-            "max_tokens": settings.OPENAI_MAX_TOKENS,
-            "temperature": settings.OPENAI_TEMPERATURE,
+            "api_key": settings.MISTRAL_API_KEY,
+            "model": settings.MISTRAL_MODEL,
+            "max_tokens": settings.MISTRAL_MAX_TOKENS,
+            "temperature": settings.MISTRAL_TEMPERATURE,
         }
     
     @staticmethod
