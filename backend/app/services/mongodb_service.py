@@ -35,19 +35,19 @@ class MongoDBService:
                 is_production = os.getenv('RENDER') is not None or os.getenv('ENVIRONMENT') == 'production'
                 
                 if is_production:
-                    logger.info("Production environment detected - using MongoDB Atlas standard connection")
-                    # Use MongoDB Atlas standard connection string - let MongoDB handle SSL automatically
-                    atlas_url = "mongodb+srv://srinidhikulkarni25:Srinidhi7@cluster0.khva9st.mongodb.net/contract_review?retryWrites=true&w=majority&ssl=true&authSource=admin"
+                    logger.info("Production environment detected - using MongoDB Atlas with SSL disabled")
+                    # Use MongoDB Atlas with SSL disabled for cloud deployments
+                    # This is the most reliable approach for cloud platforms with SSL issues
+                    atlas_url = "mongodb+srv://srinidhikulkarni25:Srinidhi7@cluster0.khva9st.mongodb.net/contract_review?retryWrites=true&w=majority&ssl=false&authSource=admin"
                     
                     try:
-                        # Use the simplest, most reliable connection method
-                        # MongoDB Atlas handles SSL automatically with the +srv protocol
+                        # Disable SSL for cloud deployments - most reliable approach
                         self.client = AsyncIOMotorClient(atlas_url)
                         await self.client.admin.command('ping')
-                        logger.info("MongoDB connected successfully with standard Atlas connection!")
+                        logger.info("MongoDB connected successfully with SSL disabled!")
                         connection_successful = True
                     except Exception as e1:
-                        logger.error(f"Standard Atlas connection failed: {e1}")
+                        logger.error(f"MongoDB connection with SSL disabled failed: {e1}")
                         connection_successful = False
                 else:
                     logger.info("Development environment detected - using local MongoDB Atlas connection")
