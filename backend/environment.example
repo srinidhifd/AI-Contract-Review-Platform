@@ -5,11 +5,11 @@
 # REQUIRED SETTINGS - You must provide these values
 # =============================================================================
 
-# OpenAI API Configuration
-OPENAI_API_KEY=your_openai_api_key_here
-OPENAI_MODEL=gpt-4
-OPENAI_MAX_TOKENS=4000
-OPENAI_TEMPERATURE=0.1
+# Mistral AI API Configuration
+MISTRAL_API_KEY=your_mistral_api_key_here
+MISTRAL_MODEL=mistral-large-latest
+MISTRAL_MAX_TOKENS=4000
+MISTRAL_TEMPERATURE=0.1
 
 # MongoDB Atlas Configuration
 MONGODB_URL=mongodb+srv://username:password@cluster.mongodb.net/contract_review

@@ -61,13 +61,13 @@ class Settings(BaseSettings):
             raise ValueError("SECRET_KEY must be at least 32 characters long")
         return v
     
-    @validator("OPENAI_API_KEY")
-    def validate_openai_key(cls, v):
-        if not v or v == "your_openai_api_key_here":
-            # Allow placeholder for testing without OpenAI
+    @validator("MISTRAL_API_KEY")
+    def validate_mistral_key(cls, v):
+        if not v or v == "your_mistral_api_key_here":
+            # Allow placeholder for testing without Mistral AI
             return v
-        if not v.startswith("sk-"):
-            raise ValueError("OPENAI_API_KEY must be a valid OpenAI API key")
+        if not v.startswith("mistral-"):
+            raise ValueError("MISTRAL_API_KEY must be a valid Mistral AI API key")
         return v
     
     @validator("MONGODB_URL")
@@ -285,9 +285,9 @@ settings = Settings()
 def validate_config() -> bool:
     """Validate that all required configuration is present."""
     try:
-        # Test OpenAI API key format
-        if not settings.OPENAI_API_KEY.startswith("sk-"):
-            logging.error("Invalid OpenAI API key format")
+        # Test Mistral AI API key format
+        if not settings.MISTRAL_API_KEY.startswith("mistral-"):
+            logging.error("Invalid Mistral AI API key format")
             return False
         
         # Test MongoDB URL format
@@ -301,7 +301,7 @@ def validate_config() -> bool:
             return False
         
         logging.info("Configuration validation successful")
-        return True
+    return True 
         
     except Exception as e:
         logging.error(f"Configuration validation failed: {e}")

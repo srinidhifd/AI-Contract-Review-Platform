@@ -11,7 +11,7 @@ from app.models.mongodb_models import (
 )
 from app.models.contract import ContractSummary
 from app.services.file_service import file_service
-from app.services.openai_service import openai_service
+from app.services.ai_service import ai_service
 from app.services.mongodb_service import mongodb_service
 from app.api.auth import get_current_user
 
@@ -319,7 +319,7 @@ async def analyze_document(
             
             # Perform AI analysis
             logger.info(f"Starting AI analysis for document: {document_id}")
-            analysis = openai_service.analyze_contract(content, document_id)
+            analysis = ai_service.analyze_contract(content)
             logger.info(f"AI analysis completed for document: {document_id}")
             
             # Update document with analysis results
@@ -345,9 +345,9 @@ async def analyze_document(
                 risk_assessments=[risk.dict() for risk in analysis.risk_assessments],
                 suggested_revisions=analysis.suggested_revisions,
                 processing_time=analysis.processing_time
-            )
+        )
         
-        except Exception as e:
+    except Exception as e:
             # Delete the document if analysis fails
             logger.error(f"Document analysis failed: {document.filename} - {e}")
             
@@ -368,7 +368,7 @@ async def analyze_document(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Analysis failed: {str(e)}. Document has been removed. Please try uploading again."
             )
-    
+        
     except HTTPException:
         raise
     except Exception as e:

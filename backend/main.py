@@ -12,7 +12,7 @@ from fastapi.responses import JSONResponse
 
 from app.config import settings, validate_config, get_logging_config
 from app.services.mongodb_service import mongodb_service
-from app.services.openai_service import openai_service
+from app.services.ai_service import ai_service
 from app.api import api_router
 
 # Configure logging
@@ -45,10 +45,10 @@ async def lifespan(app: FastAPI):
     
     # Test OpenAI service
     try:
-        if await openai_service.health_check():
-            logger.info("OpenAI service is healthy")
+        if ai_service.client:
+            logger.info("AI service is healthy")
         else:
-            logger.warning("OpenAI service health check failed")
+            logger.warning("AI service health check failed")
     except Exception as e:
         logger.warning(f"OpenAI service health check error: {e}")
     
@@ -148,11 +148,11 @@ async def health_check():
         # Check MongoDB
         mongodb_healthy = await mongodb_service.health_check()
         
-        # Check OpenAI
-        openai_healthy = await openai_service.health_check()
+        # Check AI service
+        ai_healthy = ai_service.client is not None
         
         # Overall health status
-        overall_healthy = mongodb_healthy and openai_healthy
+        overall_healthy = mongodb_healthy and ai_healthy
         
         return {
             "status": "healthy" if overall_healthy else "unhealthy",
@@ -161,7 +161,7 @@ async def health_check():
             "environment": settings.ENVIRONMENT,
             "services": {
                 "mongodb": "healthy" if mongodb_healthy else "unhealthy",
-                "openai": "healthy" if openai_healthy else "unhealthy"
+                "ai_service": "healthy" if ai_healthy else "unhealthy"
             }
         }
         

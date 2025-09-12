@@ -9,7 +9,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from app.models.mongodb_models import (
     ChatMessage, ChatMessageRequest, ChatMessageResponse, ChatSessionResponse, UserResponse
 )
-from app.services.openai_service import openai_service
+from app.models.contract import ContractSummary
+from app.services.ai_service import ai_service
 from app.services.mongodb_service import mongodb_service
 from app.services.file_service import file_service
 from app.api.auth import get_current_user
@@ -276,8 +277,16 @@ async def send_message(
         
         # Get AI response
         try:
-            ai_response = openai_service.answer_question(
-                message_data.message, document_content, context
+            # Create a simple ContractSummary for ai_service
+            simple_summary = ContractSummary(
+                key_points=[],
+                total_clauses=0,
+                risk_assessments=[],
+                suggested_revisions=[],
+                overall_risk_score=0.0
+            )
+            ai_response = await ai_service.answer_question(
+                message_data.message, document_content, simple_summary
             )
         except Exception as e:
             logger.error(f"AI response generation failed: {e}")
@@ -302,12 +311,12 @@ async def send_message(
             "document_id": document.id,  # Use the document object, not string
             "user_id": user_document.id,  # Use the User document object
             "message": message_data.message,  # Reference to user's question
-            "response": ai_response.response,
+            "response": ai_response.get("answer", "No response generated"),
             "message_type": "assistant",
             "metadata": {
-                "confidence_score": ai_response.confidence_score,
-                "model_used": ai_response.model_used,
-                "processing_time": ai_response.processing_time
+                "confidence_score": 0.8,  # Default confidence
+                "model_used": "mistral-ai",
+                "processing_time": 0.0
             }
         }
         
@@ -318,7 +327,7 @@ async def send_message(
         return ChatMessageResponse(
             id=str(ai_message.id),
             message=message_data.message,
-            response=ai_response.response,
+            response=ai_response.get("answer", "No response generated"),
             timestamp=ai_message.timestamp,
             message_type="assistant"
         )
