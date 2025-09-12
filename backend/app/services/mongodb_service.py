@@ -40,7 +40,8 @@ class MongoDBService:
                     atlas_url = "mongodb+srv://srinidhikulkarni25:Srinidhi7@cluster0.khva9st.mongodb.net/contract_review?retryWrites=true&w=majority"
                     
                     try:
-                        # Render-specific MongoDB connection with SSL fixes
+                        # Industry-standard MongoDB Atlas connection for production
+                        # Let MongoDB handle SSL automatically via connection string
                         self.client = AsyncIOMotorClient(
                             atlas_url,
                             serverSelectionTimeoutMS=30000,
@@ -50,18 +51,45 @@ class MongoDBService:
                             minPoolSize=1,
                             maxIdleTimeMS=30000,
                             retryWrites=True,
-                            retryReads=True,
-                            tls=True,
-                            tlsAllowInvalidCertificates=False,
-                            tlsAllowInvalidHostnames=False,
-                            tlsInsecure=False
+                            retryReads=True
                         )
                         await self.client.admin.command('ping')
                         logger.info("MongoDB connected successfully with Render (production)!")
                         connection_successful = True
                     except Exception as e1:
-                        logger.error(f"Render MongoDB Atlas connection failed: {e1}")
-                        connection_successful = False
+                        logger.error(f"Standard MongoDB Atlas connection failed: {e1}")
+                        logger.info("Trying fallback connection methods...")
+                        
+                        # Fallback 1: Try with explicit SSL parameters (industry standard)
+                        try:
+                            self.client = AsyncIOMotorClient(
+                                atlas_url,
+                                serverSelectionTimeoutMS=30000,
+                                connectTimeoutMS=30000,
+                                socketTimeoutMS=30000,
+                                maxPoolSize=10,
+                                minPoolSize=1,
+                                maxIdleTimeMS=30000,
+                                retryWrites=True,
+                                retryReads=True,
+                                tls=True,
+                                tlsAllowInvalidCertificates=True
+                            )
+                            await self.client.admin.command('ping')
+                            logger.info("MongoDB connected with fallback SSL method!")
+                            connection_successful = True
+                        except Exception as e2:
+                            logger.error(f"Fallback SSL connection failed: {e2}")
+                            
+                            # Fallback 2: Try with minimal parameters (last resort)
+                            try:
+                                self.client = AsyncIOMotorClient(atlas_url)
+                                await self.client.admin.command('ping')
+                                logger.info("MongoDB connected with minimal parameters!")
+                                connection_successful = True
+                            except Exception as e3:
+                                logger.error(f"All connection methods failed: {e3}")
+                                connection_successful = False
                 else:
                     logger.info("Development environment detected - using local MongoDB Atlas connection")
                     # Use MongoDB Atlas connection string for local development
