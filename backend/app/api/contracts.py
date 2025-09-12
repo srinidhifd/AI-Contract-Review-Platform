@@ -345,9 +345,9 @@ async def analyze_document(
                 risk_assessments=[risk.dict() for risk in analysis.risk_assessments],
                 suggested_revisions=analysis.suggested_revisions,
                 processing_time=analysis.processing_time
-        )
+            )
         
-    except Exception as e:
+        except Exception as e:
             # Delete the document if analysis fails
             logger.error(f"Document analysis failed: {document.filename} - {e}")
             
