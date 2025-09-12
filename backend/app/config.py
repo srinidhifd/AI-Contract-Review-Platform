@@ -66,8 +66,8 @@ class Settings(BaseSettings):
         if not v or v == "your_mistral_api_key_here":
             # Allow placeholder for testing without Mistral AI
             return v
-        if not v.startswith("mistral-"):
-            raise ValueError("MISTRAL_API_KEY must be a valid Mistral AI API key")
+        if len(v) < 20:
+            raise ValueError("MISTRAL_API_KEY must be a valid Mistral AI API key (too short)")
         return v
     
     @validator("MONGODB_URL")
@@ -286,8 +286,8 @@ def validate_config() -> bool:
     """Validate that all required configuration is present."""
     try:
         # Test Mistral AI API key format
-        if not settings.MISTRAL_API_KEY.startswith("mistral-"):
-            logging.error("Invalid Mistral AI API key format")
+        if len(settings.MISTRAL_API_KEY) < 20:
+            logging.error("Invalid Mistral AI API key format (too short)")
             return False
         
         # Test MongoDB URL format
