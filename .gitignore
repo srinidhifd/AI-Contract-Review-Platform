@@ -95,7 +95,7 @@ profile_default/
 ipython_config.py
 
 # pyenv
-.python-version
+# .python-version  # Commented out to allow Python version control
 
 # pipenv
 Pipfile.lock
