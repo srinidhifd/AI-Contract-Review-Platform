@@ -35,19 +35,32 @@ class MongoDBService:
                 is_production = os.getenv('RENDER') is not None or os.getenv('ENVIRONMENT') == 'production'
                 
                 if is_production:
-                    logger.info("Production environment detected - using MongoDB Atlas with SSL disabled")
-                    # Use MongoDB Atlas with SSL disabled for cloud deployments
-                    # This is the most reliable approach for cloud platforms with SSL issues
-                    atlas_url = "mongodb+srv://srinidhikulkarni25:Srinidhi7@cluster0.khva9st.mongodb.net/contract_review?retryWrites=true&w=majority&ssl=false&authSource=admin"
+                    logger.info("Production environment detected - using MongoDB Atlas with compatible SSL")
+                    # Use MongoDB Atlas with SSL enabled but compatible settings
+                    # MongoDB Atlas requires SSL - we need to use compatible SSL settings
+                    atlas_url = "mongodb+srv://srinidhikulkarni25:Srinidhi7@cluster0.khva9st.mongodb.net/contract_review?retryWrites=true&w=majority&ssl=true&authSource=admin"
                     
                     try:
-                        # Disable SSL for cloud deployments - most reliable approach
-                        self.client = AsyncIOMotorClient(atlas_url)
+                        # Use SSL with compatible settings for cloud deployments
+                        self.client = AsyncIOMotorClient(
+                            atlas_url,
+                            serverSelectionTimeoutMS=30000,
+                            connectTimeoutMS=30000,
+                            socketTimeoutMS=30000,
+                            maxPoolSize=10,
+                            minPoolSize=1,
+                            maxIdleTimeMS=30000,
+                            retryWrites=True,
+                            retryReads=True,
+                            tls=True,
+                            tlsAllowInvalidCertificates=True,
+                            tlsAllowInvalidHostnames=True
+                        )
                         await self.client.admin.command('ping')
-                        logger.info("MongoDB connected successfully with SSL disabled!")
+                        logger.info("MongoDB connected successfully with compatible SSL!")
                         connection_successful = True
                     except Exception as e1:
-                        logger.error(f"MongoDB connection with SSL disabled failed: {e1}")
+                        logger.error(f"MongoDB connection with compatible SSL failed: {e1}")
                         connection_successful = False
                 else:
                     logger.info("Development environment detected - using local MongoDB Atlas connection")
